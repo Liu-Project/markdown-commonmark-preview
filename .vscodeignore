@@ -9,7 +9,9 @@ out/**
 build.js
 make_icon.py
 tsconfig.json
+tsconfig.tsbuildinfo
 上架材料/**
+.zeroagent/**
 *.vsix
 **/*.map
 **/.DS_Store
