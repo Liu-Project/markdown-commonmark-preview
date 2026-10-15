@@ -1,0 +1,15 @@
+.vscode/**
+.vscodeignore
+.git/**
+.gitignore
+node_modules/**
+src/**
+syntaxes/**
+out/**
+build.js
+make_icon.py
+tsconfig.json
+上架材料/**
+*.vsix
+**/*.map
+**/.DS_Store

@@ -1,0 +1,837 @@
+{
+  "name": "markdown-commonmark-preview",
+  "displayName": "Markdown CommonMark Preview & Editing",
+  "description": "CommonMark-style Markdown preview (custom editor with built-in-preview-identical scroll sync) plus familiar Markdown editing commands. Rendering built on open-source KaTeX / mermaid / highlight.js.",
+  "version": "0.2.5",
+  "publisher": "Liu-Hongcun",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.77.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters",
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "commonmark",
+    "preview",
+    "scroll-sync",
+    "mermaid",
+    "katex",
+    "math",
+    "toc",
+    "table-formatter"
+  ],
+  "qna": "marketplace",
+  "galleryBanner": {
+    "color": "#1f2428",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:rmd",
+    "onLanguage:quarto",
+    "workspaceContains:README.md",
+    "onCustomEditor:markdown-commonmark-preview.editor",
+    "onCustomEditor:markdown-commonmark-preview.preview"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "markdown": {
+      "previewStyles": [
+        "./media/checkbox.css",
+        "./media/katex/katex.min.css",
+        "./media/hljs/github.min.css",
+        "./media/commonmark-style.css"
+      ],
+      "markdownItPlugins": "./dist/markdownItPlugins.bundle.js",
+      "previewScripts": [
+        "./media/mermaid.min.js",
+        "./media/preview.js"
+      ]
+    },
+    "customEditors": [
+      {
+        "viewType": "markdown-commonmark-preview.editor",
+        "displayName": "Markdown CommonMark - 编辑 (正常编辑器)",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          },
+          {
+            "filenamePattern": "*.markdown"
+          },
+          {
+            "filenamePattern": "*.mdx"
+          },
+          {
+            "filenamePattern": "*.mdown"
+          },
+          {
+            "filenamePattern": "*.mkd"
+          },
+          {
+            "filenamePattern": "*.rmd"
+          },
+          {
+            "filenamePattern": "*.qmd"
+          },
+          {
+            "filenamePattern": "*.txt"
+          }
+        ],
+        "priority": "option"
+      },
+      {
+        "viewType": "markdown-commonmark-preview.preview",
+        "displayName": "Markdown CommonMark - 预览",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          },
+          {
+            "filenamePattern": "*.markdown"
+          },
+          {
+            "filenamePattern": "*.mdx"
+          },
+          {
+            "filenamePattern": "*.mdown"
+          },
+          {
+            "filenamePattern": "*.mkd"
+          },
+          {
+            "filenamePattern": "*.rmd"
+          },
+          {
+            "filenamePattern": "*.qmd"
+          },
+          {
+            "filenamePattern": "*.txt"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "commands": [
+      {
+        "command": "markdown-commonmark-preview.toc.create",
+        "title": "%command.toc.create.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.toc.update",
+        "title": "%command.toc.update.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.toc.addSecNumbers",
+        "title": "%command.toc.addSecNumbers.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.toc.removeSecNumbers",
+        "title": "%command.toc.removeSecNumbers.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.printToHtml",
+        "title": "%command.printToHtml.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.printToHtmlBatch",
+        "title": "%command.printToHtmlBatch.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleCodeSpan",
+        "title": "%command.editing.toggleCodeSpan.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleMath",
+        "title": "%command.editing.toggleMath.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleMathReverse",
+        "title": "%command.editing.toggleMathReverse.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleList",
+        "title": "%command.editing.toggleList.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleCodeBlock",
+        "title": "%command.editing.toggleCodeBlock.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleBold",
+        "title": "%command.editing.toggleBold%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleItalic",
+        "title": "%command.editing.toggleItalic%"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleStrikethrough",
+        "title": "%command.editing.toggleStrikethrough%"
+      },
+      {
+        "command": "markdown-commonmark-preview.checkTaskList",
+        "title": "%command.checkTaskList%"
+      },
+      {
+        "command": "markdown-commonmark-preview.openWithEditor",
+        "title": "Markdown: Open with CommonMark Editor"
+      },
+      {
+        "command": "markdown-commonmark-preview.openWithPreview",
+        "title": "Markdown: Open with CommonMark Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "markdown-commonmark-preview.setTheme",
+        "title": "Markdown: Set CommonMark Preview Theme"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markdown-commonmark-preview.editing.toggleBold",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleItalic",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleStrikethrough",
+        "key": "alt+s",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !isMac"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleHeadingUp",
+        "key": "ctrl+shift+]",
+        "mac": "ctrl+shift+]",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleHeadingDown",
+        "key": "ctrl+shift+[",
+        "mac": "ctrl+shift+[",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.toggleMath",
+        "key": "ctrl+m",
+        "mac": "cmd+m",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/"
+      },
+      {
+        "command": "markdown-commonmark-preview.onEnterKey",
+        "key": "enter",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && (!suggestWidgetVisible || config.editor.acceptSuggestionOnEnter == 'off') && !editorHasMultipleSelections && vim.mode != 'Normal' && vim.mode != 'Visual' && vim.mode != 'VisualBlock' && vim.mode != 'VisualLine' && vim.mode != 'SearchInProgressMode' && vim.mode != 'CommandlineInProgress' && vim.mode != 'Replace' && vim.mode != 'EasyMotionMode' && vim.mode != 'EasyMotionInputMode' && vim.mode != 'SurroundInputMode' && !markdown-commonmark-preview.editor.cursor.inFencedCodeBlock && !markdown-commonmark-preview.editor.cursor.inMathEnv"
+      },
+      {
+        "command": "markdown-commonmark-preview.onCtrlEnterKey",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && (!suggestWidgetVisible || config.editor.acceptSuggestionOnEnter == 'off') && !editorHasMultipleSelections && !markdown-commonmark-preview.editor.cursor.inFencedCodeBlock && !markdown-commonmark-preview.editor.cursor.inMathEnv"
+      },
+      {
+        "command": "markdown-commonmark-preview.onShiftEnterKey",
+        "key": "shift+enter",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && (!suggestWidgetVisible || config.editor.acceptSuggestionOnEnter == 'off') && !editorHasMultipleSelections && !markdown-commonmark-preview.editor.cursor.inFencedCodeBlock && !markdown-commonmark-preview.editor.cursor.inMathEnv"
+      },
+      {
+        "command": "markdown-commonmark-preview.onTabKey",
+        "key": "tab",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible && !inlineSuggestionVisible && !editorHasMultipleSelections && !editorTabMovesFocus && !inSnippetMode && !hasSnippetCompletions && !hasOtherSuggestions && markdown-commonmark-preview.editor.cursor.inList && !markdown-commonmark-preview.editor.cursor.inFencedCodeBlock && !markdown-commonmark-preview.editor.cursor.inMathEnv && !tabShouldJumpToInlineEdit && !tabShouldAcceptInlineEdit"
+      },
+      {
+        "command": "markdown-commonmark-preview.onShiftTabKey",
+        "key": "shift+tab",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible && !editorHasMultipleSelections && !editorTabMovesFocus && !inSnippetMode && !hasSnippetCompletions && !hasOtherSuggestions && markdown-commonmark-preview.editor.cursor.inList && !markdown-commonmark-preview.editor.cursor.inFencedCodeBlock && !markdown-commonmark-preview.editor.cursor.inMathEnv"
+      },
+      {
+        "command": "markdown-commonmark-preview.onBackspaceKey",
+        "key": "backspace",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible && !editorHasMultipleSelections && vim.mode != 'Normal' && vim.mode != 'Visual' && vim.mode != 'VisualBlock' && vim.mode != 'VisualLine' && vim.mode != 'SearchInProgressMode' && vim.mode != 'CommandlineInProgress' && vim.mode != 'Replace' && vim.mode != 'EasyMotionMode' && vim.mode != 'EasyMotionInputMode' && vim.mode != 'SurroundInputMode' && !markdown-commonmark-preview.editor.cursor.inFencedCodeBlock && !markdown-commonmark-preview.editor.cursor.inMathEnv"
+      },
+      {
+        "command": "markdown-commonmark-preview.onMoveLineUp",
+        "key": "alt+up",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible"
+      },
+      {
+        "command": "markdown-commonmark-preview.onMoveLineDown",
+        "key": "alt+down",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible"
+      },
+      {
+        "command": "markdown-commonmark-preview.onCopyLineUp",
+        "win": "shift+alt+up",
+        "mac": "shift+alt+up",
+        "linux": "ctrl+shift+alt+up",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible"
+      },
+      {
+        "command": "markdown-commonmark-preview.onCopyLineDown",
+        "win": "shift+alt+down",
+        "mac": "shift+alt+down",
+        "linux": "ctrl+shift+alt+down",
+        "when": "editorTextFocus && !editorReadonly && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible"
+      },
+      {
+        "command": "markdown-commonmark-preview.onIndentLines",
+        "key": "ctrl+]",
+        "mac": "cmd+]",
+        "when": "editorTextFocus && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible"
+      },
+      {
+        "command": "markdown-commonmark-preview.onOutdentLines",
+        "key": "ctrl+[",
+        "mac": "cmd+[",
+        "when": "editorTextFocus && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !suggestWidgetVisible"
+      },
+      {
+        "command": "markdown-commonmark-preview.checkTaskList",
+        "key": "alt+c",
+        "when": "editorTextFocus && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !isMac"
+      },
+      {
+        "command": "markdown-commonmark-preview.editing.paste",
+        "key": "ctrl+v",
+        "mac": "cmd+v",
+        "when": "editorTextFocus && editorLangId =~ /^markdown$|^rmd$|^quarto$/ && editorHasSelection"
+      },
+      {
+        "command": "markdown-commonmark-preview.openWithPreview",
+        "key": "ctrl+k k",
+        "mac": "cmd+k k",
+        "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ || (resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/ && !editorIsOpen)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "markdown-commonmark-preview.printToHtml",
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/",
+          "group": "markdown.print@1"
+        },
+        {
+          "command": "markdown-commonmark-preview.printToHtmlBatch",
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && workspaceFolderCount >= 1",
+          "group": "markdown.print@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && !notebookEditorFocused",
+          "command": "markdown-commonmark-preview.openWithPreview",
+          "group": "navigation@1"
+        },
+        {
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
+          "command": "markdown-commonmark-preview.editing.toggleBold",
+          "group": "navigation@3"
+        },
+        {
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
+          "command": "markdown-commonmark-preview.editing.toggleItalic",
+          "group": "navigation@4"
+        },
+        {
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
+          "command": "markdown-commonmark-preview.editing.toggleCodeSpan",
+          "group": "navigation@5"
+        },
+        {
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
+          "command": "markdown-commonmark-preview.editing.toggleList",
+          "group": "navigation@6"
+        },
+        {
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
+          "command": "markdown-commonmark-preview.checkTaskList",
+          "group": "navigation@7"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "markdown-commonmark-preview.openWithEditor",
+          "when": "resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/",
+          "group": "navigation@2"
+        },
+        {
+          "command": "markdown-commonmark-preview.openWithPreview",
+          "when": "resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/",
+          "group": "navigation@3"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "markdown-commonmark-preview.openWithEditor",
+          "when": "resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/",
+          "group": "navigation@1"
+        },
+        {
+          "command": "markdown-commonmark-preview.openWithPreview",
+          "when": "resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "markdown-commonmark-preview.toc.create"
+        },
+        {
+          "command": "markdown-commonmark-preview.toc.update"
+        },
+        {
+          "command": "markdown-commonmark-preview.toc.addSecNumbers"
+        },
+        {
+          "command": "markdown-commonmark-preview.toc.removeSecNumbers"
+        },
+        {
+          "command": "markdown-commonmark-preview.printToHtml"
+        },
+        {
+          "command": "markdown-commonmark-preview.printToHtmlBatch"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleCodeSpan"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleMath"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleMathReverse"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleList"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleCodeBlock"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleBold"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleItalic"
+        },
+        {
+          "command": "markdown-commonmark-preview.editing.toggleStrikethrough"
+        },
+        {
+          "command": "markdown-commonmark-preview.checkTaskList"
+        },
+        {
+          "command": "markdown-commonmark-preview.openWithEditor"
+        },
+        {
+          "command": "markdown-commonmark-preview.openWithPreview"
+        },
+        {
+          "command": "markdown-commonmark-preview.setTheme"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Markdown CommonMark Preview & Editing",
+      "properties": {
+        "markdown-commonmark-preview.completion.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.completion.enabled%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.completion.respectVscodeSearchExclude": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.completion.respectVscodeSearchExclude%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.completion.root": {
+          "type": "string",
+          "default": "",
+          "description": "%config.completion.root%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.italic.indicator": {
+          "type": "string",
+          "default": "*",
+          "markdownDescription": "%config.italic.indicator.description%",
+          "enum": [
+            "*",
+            "_"
+          ]
+        },
+        "markdown-commonmark-preview.bold.indicator": {
+          "type": "string",
+          "default": "**",
+          "markdownDescription": "%config.bold.indicator.description%",
+          "enum": [
+            "**",
+            "__"
+          ]
+        },
+        "markdown-commonmark-preview.katex.macros": {
+          "type": "object",
+          "default": {},
+          "description": "%config.katex.macros.description%"
+        },
+        "markdown-commonmark-preview.list.indentationSize": {
+          "type": "string",
+          "enum": [
+            "adaptive",
+            "inherit"
+          ],
+          "markdownEnumDescriptions": [
+            "%config.list.indentationSize.enumDescriptions.adaptive%",
+            "%config.list.indentationSize.enumDescriptions.inherit%"
+          ],
+          "default": "adaptive",
+          "markdownDescription": "%config.list.indentationSize.description%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.list.toggle.candidate-markers": {
+          "type": "array",
+          "default": [
+            "-",
+            "*",
+            "+",
+            "1.",
+            "1)"
+          ],
+          "items": {
+            "enum": [
+              "-",
+              "*",
+              "+",
+              "1.",
+              "1)"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "description": "%config.list.toggle.candidate-markers.description%"
+        },
+        "markdown-commonmark-preview.math.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.math.enabled%"
+        },
+        "markdown-commonmark-preview.orderedList.autoRenumber": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.orderedList.autoRenumber.description%"
+        },
+        "markdown-commonmark-preview.orderedList.marker": {
+          "type": "string",
+          "default": "ordered",
+          "description": "%config.orderedList.marker.description%",
+          "enum": [
+            "one",
+            "ordered"
+          ],
+          "markdownEnumDescriptions": [
+            "%config.orderedList.marker.enumDescriptions.one%",
+            "%config.orderedList.marker.enumDescriptions.ordered%"
+          ]
+        },
+        "markdown-commonmark-preview.preview.autoShowPreviewToSide": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.preview.autoShowPreviewToSide.description%"
+        },
+        "markdown-commonmark-preview.print.absoluteImgPath": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.print.absoluteImgPath.description%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.print.imgToBase64": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.print.imgToBase64.description%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.print.includeVscodeStylesheets": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.print.includeVscodeStylesheets%"
+        },
+        "markdown-commonmark-preview.print.onFileSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.print.onFileSave.description%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.print.pureHtml": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.print.pureHtml.description%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.print.theme": {
+          "type": "string",
+          "default": "light",
+          "enum": [
+            "light",
+            "dark"
+          ],
+          "description": "%config.print.theme%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.print.validateUrls": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.print.validateUrls.description%"
+        },
+        "markdown-commonmark-preview.showActionButtons": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.showActionButtons.description%"
+        },
+        "markdown-commonmark-preview.syntax.decorations": {
+          "type": "boolean",
+          "default": null,
+          "markdownDeprecationMessage": "%config.syntax.decorations.description%"
+        },
+        "markdown-commonmark-preview.syntax.decorationFileSizeLimit": {
+          "type": "number",
+          "default": 50000,
+          "description": "%config.syntax.decorationFileSizeLimit.description%"
+        },
+        "markdown-commonmark-preview.syntax.plainTheme": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.syntax.plainTheme.description%"
+        },
+        "markdown-commonmark-preview.tableFormatter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.tableFormatter.enabled.description%"
+        },
+        "markdown-commonmark-preview.tableFormatter.normalizeIndentation": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.tableFormatter.normalizeIndentation.description%"
+        },
+        "markdown-commonmark-preview.tableFormatter.delimiterRowNoPadding": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.tableFormatter.delimiterRowNoPadding.description%"
+        },
+        "markdown-commonmark-preview.theming.decoration.renderCodeSpan": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.theming.decoration.renderCodeSpan.description%",
+          "scope": "application"
+        },
+        "markdown-commonmark-preview.theming.decoration.renderHardLineBreak": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.theming.decoration.renderHardLineBreak.description%",
+          "scope": "application"
+        },
+        "markdown-commonmark-preview.theming.decoration.renderLink": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.theming.decoration.renderLink.description%",
+          "scope": "application"
+        },
+        "markdown-commonmark-preview.theming.decoration.renderParagraph": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.theming.decoration.renderParagraph.description%",
+          "scope": "application"
+        },
+        "markdown-commonmark-preview.theming.decoration.renderStrikethrough": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%config.theming.decoration.renderStrikethrough.description%",
+          "scope": "application"
+        },
+        "markdown-commonmark-preview.theming.decoration.renderTrailingSpace": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.theming.decoration.renderTrailingSpace.description%",
+          "scope": "application"
+        },
+        "markdown-commonmark-preview.toc.levels": {
+          "type": "string",
+          "default": "1..6",
+          "markdownDescription": "%config.toc.levels.description%",
+          "pattern": "^[1-6]\\.\\.[1-6]$"
+        },
+        "markdown-commonmark-preview.toc.omittedFromToc": {
+          "type": "object",
+          "default": {},
+          "description": "%config.toc.omittedFromToc.description%"
+        },
+        "markdown-commonmark-preview.toc.orderedList": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.toc.orderedList.description%"
+        },
+        "markdown-commonmark-preview.toc.plaintext": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.toc.plaintext.description%"
+        },
+        "markdown-commonmark-preview.toc.slugifyMode": {
+          "type": "string",
+          "default": "github",
+          "markdownDescription": "%config.toc.slugifyMode.description%",
+          "enum": [
+            "github",
+            "azureDevops",
+            "bitbucket-cloud",
+            "gitea",
+            "gitlab",
+            "vscode",
+            "zola"
+          ],
+          "enumDescriptions": [
+            "GitHub",
+            "Azure DevOps",
+            "Bitbucket Cloud",
+            "Gitea",
+            "GitLab",
+            "Visual Studio Code",
+            "Zola"
+          ]
+        },
+        "markdown-commonmark-preview.toc.unorderedList.marker": {
+          "type": "string",
+          "default": "-",
+          "markdownDescription": "%config.toc.unorderedList.marker.description%",
+          "enum": [
+            "-",
+            "*",
+            "+"
+          ]
+        },
+        "markdown-commonmark-preview.toc.updateOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.toc.updateOnSave.description%"
+        },
+        "markdown-commonmark-preview.extraLangIds": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "enum": [
+              "rmd",
+              "quarto"
+            ]
+          },
+          "description": "%config.extraLangIds.description%"
+        },
+        "markdown-commonmark-preview.theme": {
+          "type": "string",
+          "enum": [
+            "github"
+          ],
+          "default": "github",
+          "description": "CommonMark theme used for preview."
+        }
+      }
+    },
+    "grammars": [
+      {
+        "scopeName": "markdown.math_display",
+        "path": "./syntaxes/math_display.markdown.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ]
+      },
+      {
+        "scopeName": "markdown.math_inline",
+        "path": "./syntaxes/math_inline.markdown.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ]
+      },
+      {
+        "scopeName": "text.katex",
+        "path": "./syntaxes/katex.tmLanguage.json"
+      }
+    ],
+    "colors": [
+      {
+        "id": "markdown-commonmark-preview.editor.codeSpan.background",
+        "description": "Background color of code spans in the Markdown editor.",
+        "defaults": {
+          "dark": "#00000000",
+          "light": "#00000000",
+          "highContrast": "#00000000"
+        }
+      },
+      {
+        "id": "markdown-commonmark-preview.editor.codeSpan.border",
+        "description": "Border color of code spans in the Markdown editor.",
+        "defaults": {
+          "dark": "editor.selectionBackground",
+          "light": "editor.selectionBackground",
+          "highContrast": "editor.selectionBackground"
+        }
+      },
+      {
+        "id": "markdown-commonmark-preview.editor.formattingMark.foreground",
+        "description": "Color of formatting marks (paragraphs, hard line breaks, links, etc.) in the Markdown editor.",
+        "defaults": {
+          "dark": "editorWhitespace.foreground",
+          "light": "editorWhitespace.foreground",
+          "highContrast": "diffEditor.insertedTextBorder"
+        }
+      },
+      {
+        "id": "markdown-commonmark-preview.editor.trailingSpace.background",
+        "description": "Background color of trailing space (U+0020) characters in the Markdown editor.",
+        "defaults": {
+          "dark": "diffEditor.diagonalFill",
+          "light": "diffEditor.diagonalFill",
+          "highContrast": "editorWhitespace.foreground"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./ && node build.js",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.77.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@neilsustc/markdown-it-katex": "^1.0.0",
+    "entities": "^3.0.1",
+    "grapheme-splitter": "^1.0.4",
+    "highlight.js": "^11.5.1",
+    "image-size": "^0.9.3",
+    "katex": "^0.16.4",
+    "markdown-it": "^13.0.2",
+    "markdown-it-container": "^4.0.0",
+    "markdown-it-github-alerts": "^0.1.2",
+    "markdown-it-task-lists": "^2.1.1",
+    "markdown-it-texmath": "^1.0.0",
+    "mermaid": "^10.0.0",
+    "string-similarity": "^4.0.4",
+    "zola-slug": "file:./vendor/zola-slug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Liu-Project/markdown-commonmark-preview"
+  },
+  "homepage": "https://github.com/Liu-Project/markdown-commonmark-preview"
+}

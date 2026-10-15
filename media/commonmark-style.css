@@ -1,0 +1,153 @@
+/* CommonMark-style preview theme (clean-room implementation).
+ *
+ * Written from scratch, inspired by the general look of GitHub-style
+ * Markdown themes (typography, spacing, palette). All fonts below are plain
+ * system-font fallbacks; no font files are bundled.
+ *
+ * This stylesheet only affects the VS Code built-in preview (Ctrl+K V) via
+ * `markdown.previewStyles`. The custom-editor preview has its own styling.
+ */
+
+.markdown-body {
+  font-family: "Helvetica Neue", Helvetica, Arial,
+    "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333333;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px 30px;
+  word-wrap: break-word;
+}
+
+/* Headings */
+.markdown-body h1,
+.markdown-body h2 {
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+.markdown-body h1 { font-size: 2em; }
+.markdown-body h2 { font-size: 1.5em; }
+.markdown-body h3 { font-size: 1.25em; }
+.markdown-body h4 { font-size: 1em; }
+.markdown-body h5 { font-size: 0.875em; }
+.markdown-body h6 { font-size: 0.85em; color: #6a737d; }
+
+/* Links */
+.markdown-body a { color: #0366d6; text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+
+/* Inline code & code blocks */
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  background-color: rgba(27, 31, 35, 0.05);
+  border-radius: 3px;
+}
+.markdown-body pre {
+  background-color: #f6f8fa;
+  border-radius: 3px;
+  padding: 16px;
+  overflow: auto;
+  line-height: 1.45;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 100%;
+}
+
+/* Blockquotes */
+.markdown-body blockquote {
+  margin: 0;
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+}
+
+/* Tables */
+.markdown-body table {
+  border-collapse: collapse;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #dfe2e5;
+  padding: 6px 13px;
+}
+.markdown-body th {
+  background-color: #f6f8fa;
+  font-weight: 600;
+}
+.markdown-body tr {
+  border-top: 1px solid #c6cbd1;
+}
+
+/* Horizontal rules */
+.markdown-body hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: #e1e4e8;
+  border: 0;
+}
+
+/* Lists */
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+.markdown-body li + li {
+  margin-top: 0.25em;
+}
+
+/* Images */
+.markdown-body img {
+  max-width: 100%;
+}
+
+/* Task lists */
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+.markdown-body .task-list-item input {
+  margin: 0 0.2em 0.25em -1.6em;
+}
+
+/* Dark theme: degrade gracefully using VS Code theme variables so the
+   preview stays readable in dark color schemes. */
+body.vscode-dark .markdown-body {
+  color: var(--vscode-editor-foreground, #d4d4d4);
+}
+body.vscode-dark .markdown-body h1,
+body.vscode-dark .markdown-body h2 {
+  border-bottom-color: var(--vscode-editorWidget-border, #444444);
+}
+body.vscode-dark .markdown-body h6,
+body.vscode-dark .markdown-body blockquote {
+  color: #8b949e;
+}
+body.vscode-dark .markdown-body a {
+  color: #58a6ff;
+}
+body.vscode-dark .markdown-body code {
+  background-color: rgba(110, 118, 129, 0.2);
+}
+body.vscode-dark .markdown-body pre {
+  background-color: var(--vscode-textCodeBlock-background, #161b22);
+}
+body.vscode-dark .markdown-body blockquote {
+  border-left-color: #3d444d;
+}
+body.vscode-dark .markdown-body th,
+body.vscode-dark .markdown-body td {
+  border-color: #3d444d;
+}
+body.vscode-dark .markdown-body th {
+  background-color: #2d333b;
+}
+body.vscode-dark .markdown-body tr {
+  border-top-color: #3d444d;
+}
+body.vscode-dark .markdown-body hr {
+  background-color: #3d444d;
+}
