@@ -73,8 +73,19 @@ function buildMd() {
   return md;
 }
 
-export function renderMarkdownBody(text: string): string {
-  return buildMd().render(protectIndent(text));
+/**
+ * Renders the markdown body. When `resolveImage` is provided, every `<img>`
+ * `src` (both markdown `![](...)` and raw HTML `<img>`) is rewritten through
+ * it so relative file paths become absolute webview URIs the webview can load.
+ */
+export function renderMarkdownBody(text: string, resolveImage?: (src: string) => string): string {
+  const body = buildMd().render(protectIndent(text));
+  if (!resolveImage) {
+    return body;
+  }
+  return body.replace(/(<img[^>]+src=")([^"]+)("[^>]*>)/g, (_, p1: string, p2: string, p3: string) => {
+    return `${p1}${resolveImage(p2)}${p3}`;
+  });
 }
 
 const COMMON_CSS = `
@@ -122,9 +133,37 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     _token: vscode.CancellationToken
   ): Promise<void> {
     const webview = webviewPanel.webview;
+    // localResourceRoots must cover the extension media (CSS/JS) AND the
+    // folder containing the document (plus its workspace root) so relative
+    // image paths in the markdown can be loaded by the webview.
+    const resourceRoots: vscode.Uri[] = [
+      vscode.Uri.file(path.join(this.context.extensionPath, "media")),
+      vscode.Uri.file(path.dirname(document.uri.fsPath))
+    ];
+    const wsFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+    if (wsFolder && !resourceRoots.some((r) => r.fsPath === wsFolder.uri.fsPath)) {
+      resourceRoots.push(wsFolder.uri);
+    }
     webview.options = {
       enableScripts: true,
-      localResourceRoots: [vscode.Uri.file(path.join(this.context.extensionPath, "media"))]
+      localResourceRoots: resourceRoots
+    };
+
+    // Rewrite image src to absolute webview URIs so relative paths such as
+    // `media/screenshots/light.png` or `./img.png` resolve against the file
+    // that is being previewed (like the built-in Markdown preview does).
+    const resolveImageSrc = (raw: string): string => {
+      const href = decodeURI(raw).trim();
+      if (!href) {
+        return raw;
+      }
+      if (/^(https?:|data:|vscode-webview:|vscode-resource:)/i.test(href)) {
+        return raw;
+      }
+      const target = path.isAbsolute(href)
+        ? vscode.Uri.file(href)
+        : vscode.Uri.file(path.normalize(path.join(path.dirname(document.uri.fsPath), href)));
+      return webview.asWebviewUri(target).toString();
     };
 
     const cssUris = {
@@ -167,7 +206,7 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     });
 
     const render = () => {
-      webview.postMessage({ type: "render", html: renderMarkdownBody(document.getText()) });
+      webview.postMessage({ type: "render", html: renderMarkdownBody(document.getText(), resolveImageSrc) });
     };
 
     ready.then(() => {

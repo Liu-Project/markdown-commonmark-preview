@@ -83999,8 +83999,14 @@ var require_commonmarkCustomEditors = __commonJS({
       }
       return md;
     }
-    function renderMarkdownBody(text) {
-      return buildMd().render(protectIndent(text));
+    function renderMarkdownBody(text, resolveImage) {
+      const body = buildMd().render(protectIndent(text));
+      if (!resolveImage) {
+        return body;
+      }
+      return body.replace(/(<img[^>]+src=")([^"]+)("[^>]*>)/g, (_, p1, p2, p3) => {
+        return `${p1}${resolveImage(p2)}${p3}`;
+      });
     }
     var COMMON_CSS = `
   html,body{margin:0;padding:0;height:100%;overflow:hidden;}
@@ -84037,9 +84043,28 @@ var require_commonmarkCustomEditors = __commonJS({
       }
       async resolveCustomTextEditor(document2, webviewPanel, _token) {
         const webview = webviewPanel.webview;
+        const resourceRoots = [
+          vscode.Uri.file(path.join(this.context.extensionPath, "media")),
+          vscode.Uri.file(path.dirname(document2.uri.fsPath))
+        ];
+        const wsFolder = vscode.workspace.getWorkspaceFolder(document2.uri);
+        if (wsFolder && !resourceRoots.some((r) => r.fsPath === wsFolder.uri.fsPath)) {
+          resourceRoots.push(wsFolder.uri);
+        }
         webview.options = {
           enableScripts: true,
-          localResourceRoots: [vscode.Uri.file(path.join(this.context.extensionPath, "media"))]
+          localResourceRoots: resourceRoots
+        };
+        const resolveImageSrc = (raw) => {
+          const href = decodeURI(raw).trim();
+          if (!href) {
+            return raw;
+          }
+          if (/^(https?:|data:|vscode-webview:|vscode-resource:)/i.test(href)) {
+            return raw;
+          }
+          const target = path.isAbsolute(href) ? vscode.Uri.file(href) : vscode.Uri.file(path.normalize(path.join(path.dirname(document2.uri.fsPath), href)));
+          return webview.asWebviewUri(target).toString();
         };
         const cssUris = {
           katex: webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, "media", "katex", "katex.min.css"))),
@@ -84066,7 +84091,7 @@ var require_commonmarkCustomEditors = __commonJS({
           webviewPanel.onDidDispose(() => sub.dispose());
         });
         const render = () => {
-          webview.postMessage({ type: "render", html: renderMarkdownBody(document2.getText()) });
+          webview.postMessage({ type: "render", html: renderMarkdownBody(document2.getText(), resolveImageSrc) });
         };
         ready.then(() => {
           applyTheme(isDark(vscode.window.activeColorTheme));
