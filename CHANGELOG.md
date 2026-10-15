@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2026-10-15
+
+### Fixed
+
+- 修复插件激活时报错的问题：`contributes.colors` 中 4 个颜色 id 原先包含连字符 `-`（如 `markdown-commonmark-preview.editor.codeSpan.background`），不符合 VS Code 对颜色 id "仅允许字母、数字和点，且不能以点开头" 的校验规则；已统一改为 `markdown.commonmark.preview.editor.*`，并同步更新代码中的 `ThemeColor` 引用。
+
 ## [0.2.5] - 2026-10-15
 
 ### Added

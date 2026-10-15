@@ -15,10 +15,10 @@ const enum Color {
 }
 
 const colors: Readonly<Record<Color, vscode.ThemeColor>> = {
-    [Color.EditorCodeSpanBackground]: new vscode.ThemeColor("markdown-commonmark-preview.editor.codeSpan.background"),
-    [Color.EditorCodeSpanBorder]: new vscode.ThemeColor("markdown-commonmark-preview.editor.codeSpan.border"),
-    [Color.EditorFormattingMarkForeground]: new vscode.ThemeColor("markdown-commonmark-preview.editor.formattingMark.foreground"),
-    [Color.EditorTrailingSpaceBackground]: new vscode.ThemeColor("markdown-commonmark-preview.editor.trailingSpace.background"),
+    [Color.EditorCodeSpanBackground]: new vscode.ThemeColor("markdown.commonmark.preview.editor.codeSpan.background"),
+    [Color.EditorCodeSpanBorder]: new vscode.ThemeColor("markdown.commonmark.preview.editor.codeSpan.border"),
+    [Color.EditorFormattingMarkForeground]: new vscode.ThemeColor("markdown.commonmark.preview.editor.formattingMark.foreground"),
+    [Color.EditorTrailingSpaceBackground]: new vscode.ThemeColor("markdown.commonmark.preview.editor.trailingSpace.background"),
 };
 
 const enum FontIcon {

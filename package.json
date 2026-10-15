@@ -2,7 +2,7 @@
   "name": "markdown-commonmark-preview",
   "displayName": "Markdown CommonMark Preview & Editing",
   "description": "CommonMark-style Markdown preview (custom editor with built-in-preview-identical scroll sync) plus familiar Markdown editing commands. Rendering built on open-source KaTeX / mermaid / highlight.js.",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "publisher": "Liu-Hongcun",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -765,7 +765,7 @@
     ],
     "colors": [
       {
-        "id": "markdown-commonmark-preview.editor.codeSpan.background",
+        "id": "markdown.commonmark.preview.editor.codeSpan.background",
         "description": "Background color of code spans in the Markdown editor.",
         "defaults": {
           "dark": "#00000000",
@@ -774,7 +774,7 @@
         }
       },
       {
-        "id": "markdown-commonmark-preview.editor.codeSpan.border",
+        "id": "markdown.commonmark.preview.editor.codeSpan.border",
         "description": "Border color of code spans in the Markdown editor.",
         "defaults": {
           "dark": "editor.selectionBackground",
@@ -783,7 +783,7 @@
         }
       },
       {
-        "id": "markdown-commonmark-preview.editor.formattingMark.foreground",
+        "id": "markdown.commonmark.preview.editor.formattingMark.foreground",
         "description": "Color of formatting marks (paragraphs, hard line breaks, links, etc.) in the Markdown editor.",
         "defaults": {
           "dark": "editorWhitespace.foreground",
@@ -792,7 +792,7 @@
         }
       },
       {
-        "id": "markdown-commonmark-preview.editor.trailingSpace.background",
+        "id": "markdown.commonmark.preview.editor.trailingSpace.background",
         "description": "Background color of trailing space (U+0020) characters in the Markdown editor.",
         "defaults": {
           "dark": "diffEditor.diagonalFill",

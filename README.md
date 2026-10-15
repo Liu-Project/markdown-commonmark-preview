@@ -105,6 +105,7 @@ code --install-extension markdown-commonmark-preview.vsix
 
 最新版本变更详见 [CHANGELOG.md](./CHANGELOG.md)。
 
+- **0.2.6**：修复插件激活时报错的问题（`contributes.colors` 颜色 id 含非法字符连字符，已改为仅字母数字点的规范命名）。
 - **0.2.5**：首个正式版本，提供 CommonMark 风格预览、双向滚动联动及常用编辑命令。
 
 ---
