@@ -2,7 +2,7 @@
   "name": "markdown-commonmark-preview",
   "displayName": "Markdown CommonMark Preview & Editing",
   "description": "CommonMark-style Markdown preview (custom editor with built-in-preview-identical scroll sync) plus familiar Markdown editing commands. Rendering built on open-source KaTeX / mermaid / highlight.js.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "publisher": "Liu-Hongcun",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -188,6 +188,10 @@
         "icon": "$(open-preview)"
       },
       {
+        "command": "markdown-commonmark-preview.openWithPreviewInPlace",
+        "title": "Markdown: Open with CommonMark Preview"
+      },
+      {
         "command": "markdown-commonmark-preview.setTheme",
         "title": "Markdown: Set CommonMark Preview Theme"
       }
@@ -365,7 +369,7 @@
           "group": "navigation@2"
         },
         {
-          "command": "markdown-commonmark-preview.openWithPreview",
+          "command": "markdown-commonmark-preview.openWithPreviewInPlace",
           "when": "resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/",
           "group": "navigation@3"
         }
@@ -377,7 +381,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "markdown-commonmark-preview.openWithPreview",
+          "command": "markdown-commonmark-preview.openWithPreviewInPlace",
           "when": "resourceExtname =~ /^\\.(md|markdown|mdx|mdown|mkd|rmd|qmd|txt)$/",
           "group": "navigation@2"
         }

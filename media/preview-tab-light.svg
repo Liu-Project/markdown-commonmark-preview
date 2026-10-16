@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none">
+  <!-- Markdown document -->
+  <path d="M2.5 1h7L13 4.5V15H2.5V1z" stroke="#424242" stroke-width="1.1"/>
+  <path d="M9.5 1v3.5H13" stroke="#424242" stroke-width="1.1"/>
+  <!-- Text lines -->
+  <path d="M4.5 8.2h7M4.5 10.2h4" stroke="#424242" stroke-width="1" stroke-linecap="round"/>
+  <!-- Magnifier (search/preview) -->
+  <circle cx="11" cy="12" r="2" stroke="#0E639C" stroke-width="1.1"/>
+  <path d="M12.6 13.6l1.6 1.6" stroke="#0E639C" stroke-width="1.1" stroke-linecap="round"/>
+</svg>

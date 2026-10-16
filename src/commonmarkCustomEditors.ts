@@ -133,6 +133,13 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     _token: vscode.CancellationToken
   ): Promise<void> {
     const webview = webviewPanel.webview;
+    // Give the preview tab a dedicated icon (document + magnifier) so it is
+    // visually distinct from a plain markdown file tab. The built-in preview
+    // uses an eye icon; we intentionally use a different one.
+    webviewPanel.iconPath = {
+      light: vscode.Uri.file(path.join(this.context.extensionPath, "media", "preview-tab-light.svg")),
+      dark: vscode.Uri.file(path.join(this.context.extensionPath, "media", "preview-tab-dark.svg")),
+    };
     // localResourceRoots must cover the extension media (CSS/JS) AND the
     // folder containing the document (plus its workspace root) so relative
     // image paths in the markdown can be loaded by the webview.
@@ -240,6 +247,28 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
 
       const subs: vscode.Disposable[] = [];
 
+      // Scroll sync only makes sense when the preview is side-by-side with the
+      // source editor (i.e. they live in different editor groups/columns).
+      // When the preview is stacked in the same group as the editor (e.g.
+      // opened from the explorer context menu while the file is already open),
+      // following every editor scroll would silently drag the hidden preview
+      // around, which is surprising when the user switches back to it. This
+      // matches the built-in Markdown preview intent: syncing is meaningful
+      // only for side-by-side windows (Ctrl+K V / the toolbar icon).
+      const isSideBySide = (editor?: vscode.TextEditor): boolean => {
+        const previewColumn = webviewPanel.viewColumn;
+        if (previewColumn === undefined) {
+          return false;
+        }
+        const ed = editor ?? vscode.window.visibleTextEditors.find(
+          (e) => e.document.uri.with({ query: "" }).toString() === baseUri
+        );
+        if (!ed || ed.viewColumn === undefined) {
+          return false;
+        }
+        return ed.viewColumn !== previewColumn;
+      };
+
       // Document changes -> re-render.
       subs.push(vscode.workspace.onDidChangeTextDocument((e) => {
         if (e.document.uri.with({ query: "" }).toString() === baseUri) {
@@ -270,6 +299,9 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       };
       subs.push(vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
         if (e.textEditor.document.uri.with({ query: "" }).toString() !== baseUri) {
+          return;
+        }
+        if (!isSideBySide(e.textEditor)) {
           return;
         }
         if (Date.now() < suppressEditorSyncUntil) {
@@ -307,15 +339,6 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
         if (msg.type !== "revealLine") {
           return;
         }
-        let editor = vscode.window.visibleTextEditors.find(
-          (ed) => ed.document.uri.with({ query: "" }).toString() === baseUri
-        );
-        if (!editor) {
-          editor = vscode.window.activeTextEditor;
-        }
-        if (!editor) {
-          return;
-        }
         const line = Math.max(0, msg.line);
         const n = Math.floor(line);
         let range: vscode.Range;
@@ -327,8 +350,29 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
           const col = Math.floor(frac * t.length);
           range = new vscode.Range(n, col, n + 1, 0);
         }
+        // Mirror the built-in preview: scrolling the preview reveals the line
+        // in EVERY visible editor showing this document that is side-by-side
+        // with the preview, so when the same file is open in multiple parallel
+        // windows they all scroll together.
+        const matching = vscode.window.visibleTextEditors.filter(
+          (ed) => ed.document.uri.with({ query: "" }).toString() === baseUri
+        );
+        let selected = matching.filter((ed) => isSideBySide(ed));
+        if (selected.length === 0 && matching.length === 0) {
+          // The file is not open in any visible editor (preview only); keep the
+          // previous fallback so the active editor still follows.
+          const active = vscode.window.activeTextEditor;
+          if (active) {
+            selected = [active];
+          }
+        }
+        if (selected.length === 0) {
+          return;
+        }
         suppressEditorSyncUntil = Date.now() + 200;
-        editor.revealRange(range, vscode.TextEditorRevealType.AtTop);
+        for (const editor of selected) {
+          editor.revealRange(range, vscode.TextEditorRevealType.AtTop);
+        }
       }));
 
       webviewPanel.onDidDispose(() => subs.forEach((s) => s.dispose()));
@@ -662,13 +706,19 @@ export class CommonMarkPreviewProvider {
     const openCmd = vscode.commands.registerCommand("markdown-commonmark-preview.openWithPreview", (uri?: vscode.Uri) => {
       return openWithCustomEditor(uri, CommonMarkPreviewProviderImpl.viewType);
     });
+    // Context-menu entry (explorer / editor tab): opens the preview stacked in
+    // the same window instead of side-by-side.
+    const openInPlaceCmd = vscode.commands.registerCommand("markdown-commonmark-preview.openWithPreviewInPlace", (uri?: vscode.Uri) => {
+      return openWithCustomEditor(uri, CommonMarkPreviewProviderImpl.viewType, true);
+    });
     return vscode.Disposable.from(
       vscode.window.registerCustomEditorProvider(
         CommonMarkPreviewProviderImpl.viewType,
         new CommonMarkPreviewProviderImpl(context),
         { webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true } }
       ),
-      openCmd
+      openCmd,
+      openInPlaceCmd
     );
   }
 }
@@ -681,7 +731,7 @@ export class CommonMarkPreviewProvider {
  * treats every invocation as a brand new resource and opens an additional tab
  * instead of reusing/overwriting an already-open preview window.
  */
-async function openWithCustomEditor(uri: vscode.Uri | undefined, viewType: string): Promise<void> {
+async function openWithCustomEditor(uri: vscode.Uri | undefined, viewType: string, inPlace: boolean = false): Promise<void> {
   if (!uri) {
     const editor = vscode.window.activeTextEditor;
     if (
@@ -700,23 +750,50 @@ async function openWithCustomEditor(uri: vscode.Uri | undefined, viewType: strin
   }
 
   const preview = viewType === CommonMarkPreviewProviderImpl.viewType;
-  const target = preview
-    ? uri.with({ query: `commonmarkPreview=${Date.now()}` })
-    : uri;
+  let target = uri;
 
-  // Decide where to open the preview. If the source file is already open in a
-  // text editor, open the preview to its right (side-by-side). If the file is
-  // NOT open yet, opening with ViewColumn.Beside would leave an empty column on
-  // the left, so open it in the active column instead. The unique query makes
-  // VS Code treat each invocation as a brand new resource so an additional
-  // parallel window is opened every time it is already visible.
+  // Decide where to open the preview. The target group is computed from the
+  // currently active group: for the context-menu entry (`inPlace`) it is the
+  // active group itself; for the toolbar icon / Ctrl+K K it is the group to
+  // the right of the active one. If a preview of this document already exists
+  // in that target group, just focus it instead of opening another preview
+  // tab (mirrors the built-in preview). Otherwise a new preview is created in
+  // that target group: stacked (inPlace) or side-by-side (right of the active
+  // group). If the file is NOT open yet, side-by-side opening would leave an
+  // empty column on the left, so open it in the active column instead. The
+  // unique query makes VS Code treat each new invocation as a brand new
+  // resource so a fresh parallel window is opened.
   let column: vscode.ViewColumn | undefined;
   if (preview) {
     const base = uri.with({ query: "" }).toString();
-    const alreadyOpen = vscode.window.visibleTextEditors.some(
-      (ed) => ed.document.uri.with({ query: "" }).toString() === base
-    );
-    column = alreadyOpen ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active;
+    const activeColumn = vscode.window.tabGroups.activeTabGroup.viewColumn;
+    const targetColumn = inPlace
+      ? activeColumn
+      : activeColumn !== undefined
+        ? (activeColumn + 1) as vscode.ViewColumn
+        : undefined;
+    const existing = vscode.window.tabGroups.all
+      .filter((g) => g.viewColumn === targetColumn)
+      .flatMap((g) => g.tabs)
+      .find(
+        (t) =>
+          t.input instanceof vscode.TabInputCustom &&
+          t.input.viewType === CommonMarkPreviewProviderImpl.viewType &&
+          t.input.uri.with({ query: "" }).toString() === base
+      );
+    if (existing && existing.input instanceof vscode.TabInputCustom) {
+      await vscode.commands.executeCommand("vscode.openWith", existing.input.uri, viewType, targetColumn);
+      return;
+    }
+    target = uri.with({ query: `commonmarkPreview=${Date.now()}` });
+    if (inPlace) {
+      column = targetColumn ?? vscode.ViewColumn.Active;
+    } else {
+      const alreadyOpen = vscode.window.visibleTextEditors.some(
+        (ed) => ed.document.uri.with({ query: "" }).toString() === base
+      );
+      column = alreadyOpen ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active;
+    }
   }
 
   await vscode.commands.executeCommand(
