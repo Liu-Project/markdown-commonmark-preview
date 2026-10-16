@@ -650,7 +650,7 @@ export class CommonMarkEditorProvider {
       vscode.window.registerCustomEditorProvider(
         CommonMarkEditorProviderImpl.viewType,
         new CommonMarkEditorProviderImpl(),
-        { webviewOptions: { retainContextWhenHidden: true } }
+        { webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true } }
       ),
       openCmd
     );
@@ -666,7 +666,7 @@ export class CommonMarkPreviewProvider {
       vscode.window.registerCustomEditorProvider(
         CommonMarkPreviewProviderImpl.viewType,
         new CommonMarkPreviewProviderImpl(context),
-        { webviewOptions: { retainContextWhenHidden: true } }
+        { webviewOptions: { retainContextWhenHidden: true, enableFindWidget: true } }
       ),
       openCmd
     );

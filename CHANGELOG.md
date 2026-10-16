@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7] - 2026-10-16
+
+### Added
+
+- 预览与编辑自定义编辑器支持搜索：为 `markdown-commonmark-preview.preview` / `.editor` 的 Webview 启用 `enableFindWidget`，在预览中按 `Ctrl+F`（Mac 为 `Cmd+F`）即可打开与 VS Code 内置 Markdown 预览一致的查找控件（上一个 / 下一个、匹配高亮与计数、回车切换、`Esc` 关闭）。
+
 ## [0.2.6] - 2026-10-15
 
 ### Fixed
