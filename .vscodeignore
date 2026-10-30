@@ -1,5 +1,10 @@
 .vscode/**
 .vscodeignore
+.github/**
+CONTRIBUTING.md
+SECURITY.md
+CODE_OF_CONDUCT.md
+README.zh-CN.md
 .git/**
 .gitignore
 node_modules/**
