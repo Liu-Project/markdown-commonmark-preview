@@ -2,7 +2,7 @@
   "name": "markdown-commonmark-preview",
   "displayName": "Markdown CommonMark Preview & Editing",
   "description": "CommonMark-style Markdown preview (custom editor with built-in-preview-identical scroll sync) plus familiar Markdown editing commands. Rendering built on open-source KaTeX / mermaid / highlight.js.",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "publisher": "Liu-Hongcun",
   "license": "MIT",
   "icon": "media/icon.png",

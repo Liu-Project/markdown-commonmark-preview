@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.10] - 2026-10-30
+
+### Fixed
+
+- 修复预览不随编辑实时更新的问题：预览以带唯一 query 的 URI 打开，VS Code 会为它单独创建一个只读快照 TextDocument；编辑器中修改文件后预览仍渲染旧内容（如删除列表项后预览仍显示该项）。现在改为从用户正在编辑的真实文档（无 query 的 URI）重新渲染，并在保存时也刷新，行为与 VS Code 内置 Markdown 预览一致。
+
 ## [0.2.9] - 2026-10-16
 
 ### Added

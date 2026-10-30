@@ -200,6 +200,21 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     // window, so compare URIs ignoring the query part.
     const baseUri = document.uri.with({ query: "" }).toString();
 
+    // The preview's own document (its URI carries a unique query) is a
+    // separate TextDocument snapshot: VS Code loads it once when the preview
+    // opens and does NOT keep it in sync while the file is edited in a normal
+    // text editor. Re-rendering from `document` would therefore always show
+    // stale content. Mirror the built-in Markdown preview by re-rendering from
+    // the live document the user actually edits (the one whose URI has no
+    // query), falling back to the preview's document when no editor is open.
+    const isSameFile = (uri: vscode.Uri): boolean =>
+      uri.with({ query: "" }).toString() === baseUri;
+
+    const findSourceDocument = (): vscode.TextDocument => {
+      const candidates = vscode.workspace.textDocuments.filter((d) => isSameFile(d.uri));
+      return candidates.find((d) => d.uri.query === "") ?? document;
+    };
+
     // Wait for the webview to signal it is ready before sending the first
     // render, otherwise the message may be lost (blank preview).
     const ready = new Promise<void>((resolve) => {
@@ -212,8 +227,9 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       webviewPanel.onDidDispose(() => sub.dispose());
     });
 
-    const render = () => {
-      webview.postMessage({ type: "render", html: renderMarkdownBody(document.getText(), resolveImageSrc) });
+    const render = (source?: vscode.TextDocument) => {
+      const doc = source && isSameFile(source.uri) ? source : findSourceDocument();
+      webview.postMessage({ type: "render", html: renderMarkdownBody(doc.getText(), resolveImageSrc) });
     };
 
     ready.then(() => {
@@ -269,9 +285,19 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
         return ed.viewColumn !== previewColumn;
       };
 
-      // Document changes -> re-render.
+      // Document changes -> re-render from the changed document. Rendering
+      // from the preview's own (stale) document would ignore the edit.
       subs.push(vscode.workspace.onDidChangeTextDocument((e) => {
-        if (e.document.uri.with({ query: "" }).toString() === baseUri) {
+        if (isSameFile(e.document.uri)) {
+          render(e.document);
+        }
+      }));
+
+      // Save also refreshes the preview: this covers documents that changed
+      // without an open text editor (e.g. edited externally on disk), where
+      // no change event is available for the live document.
+      subs.push(vscode.workspace.onDidSaveTextDocument((e) => {
+        if (isSameFile(e.uri)) {
           render();
         }
       }));

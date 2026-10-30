@@ -114,6 +114,7 @@ code --install-extension markdown-commonmark-preview.vsix
 
 最新版本变更详见 [CHANGELOG.md](./CHANGELOG.md)。
 
+- **0.2.10**：修复预览不随编辑实时更新的问题：编辑器中修改 Markdown 后预览立即刷新（含删除列表项等场景），行为与 VS Code 内置 Markdown 预览一致。
 - **0.2.9**：滚动联动仅在并排窗口时生效，同一文件多窗口并排时一起联动；右键预览改在当前窗口打开且已有则激活；预览标签页新增专属图标。
 - **0.2.7**：预览支持搜索（`Ctrl+F` / `Cmd+F`），查找控件与内置 Markdown 预览一致。
 - **0.2.6**：修复插件激活时报错的问题（`contributes.colors` 颜色 id 含非法字符连字符，已改为仅字母数字点的规范命名）。
