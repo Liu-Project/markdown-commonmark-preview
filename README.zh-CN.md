@@ -9,6 +9,7 @@
 [![Open VSX Rating](https://img.shields.io/open-vsx/rating/Liu-Hongcun/markdown-commonmark-preview)](https://open-vsx.org/extension/Liu-Hongcun/markdown-commonmark-preview)
 [![GitHub Stars](https://img.shields.io/github/stars/Liu-Project/markdown-commonmark-preview)](https://github.com/Liu-Project/markdown-commonmark-preview)
 [![License](https://img.shields.io/github/license/Liu-Project/markdown-commonmark-preview)](LICENSE)
+[![CI](https://github.com/Liu-Project/markdown-commonmark-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/Liu-Project/markdown-commonmark-preview/actions/workflows/ci.yml)
 
 > 如果这个扩展对你有帮助，欢迎点个 ⭐ Star，你的支持是持续维护的最大动力！
 
