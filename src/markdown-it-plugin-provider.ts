@@ -1,6 +1,7 @@
 import type { KatexOptions } from "katex";
 import MarkdownIt = require("markdown-it");
 import { configManager } from "./configuration/manager";
+import { installHtmlTagStyling } from "./htmlTagStyler";
 
 const katexOptions: KatexOptions = { throwOnError: false };
 
@@ -26,6 +27,9 @@ export function extendMarkdownIt(md: MarkdownIt): MarkdownIt {
 
         md.use(require("@neilsustc/markdown-it-katex"), katexOptions);
     }
+
+    // Typora-style: render custom/unknown XML tags as grey text.
+    installHtmlTagStyling(md);
 
     return md;
 }

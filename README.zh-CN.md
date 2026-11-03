@@ -172,6 +172,7 @@ code --install-extension markdown-commonmark-preview-*.vsix
 
 最新版本变更详见 [CHANGELOG.md](./CHANGELOG.md)。
 
+- **0.2.11**：预览中的未知 / 自定义 XML 标签（如 `<Schedules>`、`<PartitionWindow/>`）改为以 Typora 风格的浅灰色文本显示（标签名与属性均可见），不再被浏览器吞掉而完全隐藏；保留原有换行与缩进，正文颜色不受影响。标准 HTML 标签（`<img>`、`<table>`、`<div>` 等）仍保持真实渲染。自定义编辑器预览与 VS Code 内置 Markdown 预览（Ctrl+K V）均生效。
 - **0.2.10**：修复预览不随编辑实时更新的问题：编辑器中修改 Markdown 后预览立即刷新（含删除列表项等场景），行为与 VS Code 内置 Markdown 预览一致。
 - **0.2.9**：滚动联动仅在并排窗口时生效，同一文件多窗口并排时一起联动；右键预览改在当前窗口打开且已有则激活；预览标签页新增专属图标。
 - **0.2.7**：预览支持搜索（`Ctrl+F` / `Cmd+F`），查找控件与内置 Markdown 预览一致。

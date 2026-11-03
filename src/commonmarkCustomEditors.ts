@@ -14,6 +14,7 @@ const taskLists = require("markdown-it-task-lists");
 const texmath = require("markdown-it-texmath");
 const katex = require("katex");
 const hljs = require("highlight.js");
+const { installHtmlTagStyling } = require("./htmlTagStyler");
 
 /**
  * Markdown-compatible renderer (CommonMark).
@@ -70,6 +71,11 @@ function buildMd() {
     };
   }
 
+  // Typora-style: render custom/unknown XML tags as grey text instead of
+  // letting the browser swallow them. Must run AFTER the data-line rules so
+  // block-level html still carries the source-line attribute.
+  installHtmlTagStyling(md);
+
   return md;
 }
 
@@ -99,6 +105,9 @@ const COMMON_CSS = `
      preview (which also uses pre-wrap on <p>). */
   .markdown-body p{white-space:pre-wrap;}
   .markdown-body li{white-space:pre-wrap;}
+  /* Typora-style unknown XML/HTML tags: shown as low-contrast grey text. */
+  .markdown-body .md-html-tag{color:#a0a0a0;white-space:pre-wrap;}
+  body.vscode-dark .markdown-body .md-html-tag{color:#8b949e;}
   /* Scroll beyond the last line like the built-in preview and the editor:
      keeps a full viewport-height of blank space below the content so the last
      line can sit in the middle of the preview, matching the editor's bottom

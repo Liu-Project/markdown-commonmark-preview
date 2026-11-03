@@ -170,6 +170,7 @@ If you like this project:
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full changelog.
 
+- **0.2.11**: Unknown/custom XML tags in the preview (e.g. `<Schedules>`, `<PartitionWindow/>`) are now shown as low-contrast grey text (Typora-style), keeping tag name and attributes visible instead of being swallowed by the browser; line breaks and indentation are preserved and normal text is unaffected. Standard HTML tags (`<img>`, `<table>`, `<div>`, ...) still render for real. Applies to both the custom-editor preview and the built-in Markdown preview (Ctrl+K V).
 - **0.2.10**: Fixed the preview not updating while editing — the preview now refreshes immediately when you edit the Markdown (including removing list items), matching the built-in VS Code Markdown preview.
 - **0.2.9**: Scroll sync only in side-by-side windows; all side-by-side windows of the same file follow together; context-menu preview opens in place and activates an existing preview; dedicated preview tab icon.
 - **0.2.7**: Preview search (`Ctrl+F` / `Cmd+F`) with a find widget identical to the built-in preview.

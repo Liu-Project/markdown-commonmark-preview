@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.11] - 2026-11-03
+
+### Added
+
+- 预览中的未知 / 自定义 XML 标签（如 `<Schedules>`、`<Schedule ...>`、`<PartitionWindow/>`）改为以 Typora 风格的低对比度灰色文本显示（标签名与属性均可见），不再被浏览器当作自定义元素吞掉而完全隐藏；保留原有换行与缩进，正文颜色不受影响。标准 HTML 标签（`<img>`、`<table>`、`<div>` 等）仍保持真实渲染。自定义编辑器预览与 VS Code 内置 Markdown 预览（Ctrl+K V）两条链路均生效。
+
 ## [0.2.10] - 2026-10-30
 
 ### Fixed
