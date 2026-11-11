@@ -2,6 +2,7 @@ import type { KatexOptions } from "katex";
 import MarkdownIt = require("markdown-it");
 import { configManager } from "./configuration/manager";
 import { installHtmlTagStyling } from "./htmlTagStyler";
+import { extendMarkdownItWithMermaid } from "./mermaid-markdown-it";
 
 const katexOptions: KatexOptions = { throwOnError: false };
 
@@ -30,6 +31,9 @@ export function extendMarkdownIt(md: MarkdownIt): MarkdownIt {
 
     // Typora-style: render custom/unknown XML tags as grey text.
     installHtmlTagStyling(md);
+
+    // Mermaid diagram support (VS Code built-in mermaid-markdown-features parity).
+    extendMarkdownItWithMermaid(md);
 
     return md;
 }

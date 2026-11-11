@@ -15,6 +15,7 @@ const texmath = require("markdown-it-texmath");
 const katex = require("katex");
 const hljs = require("highlight.js");
 const { installHtmlTagStyling } = require("./htmlTagStyler");
+const { extendMarkdownItWithMermaid } = require("./mermaid-markdown-it");
 
 /**
  * Markdown-compatible renderer (CommonMark).
@@ -76,6 +77,9 @@ function buildMd() {
   // block-level html still carries the source-line attribute.
   installHtmlTagStyling(md);
 
+  // Mermaid diagram support (VS Code built-in mermaid-markdown-features parity).
+  extendMarkdownItWithMermaid(md);
+
   return md;
 }
 
@@ -101,6 +105,12 @@ const COMMON_CSS = `
   .katex-display{overflow-x:auto;overflow-y:hidden;}
   .commonmark-diagram{margin:0.8em 0;text-align:center;}
   .commonmark-diagram pre{text-align:left;}
+  /* Mermaid diagrams rendered by the built-in-preview-compatible pipeline. */
+  .markdown-body .mermaid{margin:0.8em 0;text-align:center;}
+  .markdown-body .mermaid svg{max-width:100%;height:auto;}
+  .markdown-body .mermaid-error{color:var(--vscode-editorError-foreground, #f48771);white-space:pre-wrap;font-family:var(--vscode-editor-font-family, monospace);font-size:var(--vscode-editor-font-size, 14px);}
+  .markdown-body .md-mermaid{margin:0.8em 0;text-align:center;}
+  .markdown-body .md-mermaid svg{max-width:100%;height:auto;}
   /* Preserve soft line breaks and indentation exactly like VS Code markdown
      preview (which also uses pre-wrap on <p>). */
   .markdown-body p{white-space:pre-wrap;}
@@ -188,6 +198,19 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       markdown: webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, "media", "vscode-markdown.css"))),
     };
 
+    // Mermaid runtime, mirrors the built-in Markdown preview's mermaid bundle.
+    const mermaidUri = webview.asWebviewUri(
+      vscode.Uri.file(path.join(this.context.extensionPath, "media", "mermaid.min.js"))
+    ).toString();
+
+    // morphdom: incremental DOM diffing used by the built-in Markdown preview
+    // (extensions/markdown-language-features/preview-src/index.ts). It patches
+    // only the changed nodes, keeping already-rendered mermaid SVGs intact, so
+    // re-renders do not rebuild the whole document on every keystroke.
+    const morphdomUri = webview.asWebviewUri(
+      vscode.Uri.file(path.join(this.context.extensionPath, "media", "morphdom.min.js"))
+    ).toString();
+
     // The webview background/foreground colors follow the VS Code theme through
     // the --vscode-* CSS variables (like the built-in markdown preview). The
     // body gets a vscode-light/vscode-dark class to toggle border colors etc.
@@ -198,7 +221,13 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       webview.postMessage({ type: "theme", dark });
     };
 
-    webview.html = this.getHtml(webview, cssUris, isDark(vscode.window.activeColorTheme));
+    // First-paint content: mirror the built-in Markdown preview, which embeds
+    // the rendered HTML in the webview's initial document (meta
+    // data-initial-md-content) so the text appears immediately on load,
+    // without waiting for the ready handshake / a render round-trip. The
+    // webview parses it right away; the (large) mermaid bundle is loaded with
+    // async so it never blocks first paint.
+    const initialHtml = renderMarkdownBody(document.getText(), resolveImageSrc);
 
     const themeSub = vscode.window.onDidChangeActiveColorTheme((theme) => {
       applyTheme(isDark(theme));
@@ -208,6 +237,32 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     // The preview tab is opened with a unique query string to force a new
     // window, so compare URIs ignoring the query part.
     const baseUri = document.uri.with({ query: "" }).toString();
+
+    // Initial scroll position: like the built-in preview (G(settings.line)),
+    // embed the source editor's current top line into the webview's initial
+    // document so it can scroll to it on first paint, before the ready
+    // handshake / render round-trip. Fall back to 0 (top of document).
+    const getInitialLine = (): number => {
+      const ed = vscode.window.visibleTextEditors.find(
+        (e) => e.document.uri.with({ query: "" }).toString() === baseUri
+      ) || vscode.window.activeTextEditor;
+      if (!ed) {
+        return 0;
+      }
+      const isMd = /^(markdown|rmd|quarto)$/.test(ed.document.languageId)
+        || ed.document.uri.path.endsWith(".txt");
+      if (ed.document.uri.with({ query: "" }).toString() !== baseUri && !isMd) {
+        return 0;
+      }
+      const vr = ed.visibleRanges[0];
+      if (!vr) {
+        return 0;
+      }
+      return vr.start.line;
+    };
+    const initialLine = getInitialLine();
+
+    webview.html = this.getHtml(webview, cssUris, isDark(vscode.window.activeColorTheme), mermaidUri, morphdomUri, initialHtml, initialLine);
 
     // The preview's own document (its URI carries a unique query) is a
     // separate TextDocument snapshot: VS Code loads it once when the preview
@@ -244,31 +299,10 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     ready.then(() => {
       applyTheme(isDark(vscode.window.activeColorTheme));
 
-      // Initial positioning: like the built-in preview (G(settings.line)),
-      // scroll the preview to the source editor's current top line.
-      const syncEditorToPreview = () => {
-        const ed = vscode.window.visibleTextEditors.find(
-          (e) => e.document.uri.with({ query: "" }).toString() === baseUri
-        ) || vscode.window.activeTextEditor;
-        if (!ed) {
-          return;
-        }
-        const isMd = /^(markdown|rmd|quarto)$/.test(ed.document.languageId)
-          || ed.document.uri.path.endsWith(".txt");
-        if (ed.document.uri.with({ query: "" }).toString() !== baseUri && !isMd) {
-          return;
-        }
-        const vr = ed.visibleRanges[0];
-        if (!vr) {
-          return;
-        }
-        const n = vr.start.line;
-        const text = ed.document.lineAt(n).text;
-        webview.postMessage({ type: "updateView", line: n + vr.start.character / (text.length + 2) });
-      };
-
+      // Initial positioning on first paint is handled by the webview itself via
+      // the embedded initialLine (G(settings.line) parity). The ready handshake
+      // still triggers the first render and installs the scroll-sync listeners.
       render();
-      syncEditorToPreview();
 
       const subs: vscode.Disposable[] = [];
 
@@ -296,9 +330,33 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
 
       // Document changes -> re-render from the changed document. Rendering
       // from the preview's own (stale) document would ignore the edit.
+      //
+      // Debounced like the built-in preview (extensions/markdown-language-features
+      // src/preview/preview.ts: #delay = 300): the FIRST change renders
+      // immediately, changes within the debounce window collapse into one
+      // re-render. Without this every keystroke re-renders the full markdown
+      // and re-runs every mermaid diagram, which is slow and makes scrolling
+      // janky.
+      let previewThrottleTimer: NodeJS.Timeout | undefined;
+      let firstChangePending = true;
+      const scheduleRender = (doc?: vscode.TextDocument) => {
+        if (firstChangePending) {
+          firstChangePending = false;
+          render(doc);
+          return;
+        }
+        if (previewThrottleTimer) {
+          clearTimeout(previewThrottleTimer);
+        }
+        previewThrottleTimer = setTimeout(() => {
+          previewThrottleTimer = undefined;
+          render(doc);
+        }, 300);
+      };
+
       subs.push(vscode.workspace.onDidChangeTextDocument((e) => {
         if (isSameFile(e.document.uri)) {
-          render(e.document);
+          scheduleRender(e.document);
         }
       }));
 
@@ -414,13 +472,19 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     });
   }
 
-  private getHtml(webview: vscode.Webview, css: any, initialDark: boolean): string {
+  private getHtml(webview: vscode.Webview, css: any, initialDark: boolean, mermaidSrc: string, morphdomSrc: string, initialHtml: string, initialLine: number): string {
     const nonce = getNonce();
+    // Built-in preview embeds the rendered content in data-initial-md-content so
+    // the webview can paint text before any script round-trip. Escape attribute
+    // like the built-in (util/dom.ts escapeAttribute).
+    const escapeAttribute = (value: string): string =>
+      value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+<meta id="vscode-markdown-preview-data" data-initial-md-content="${escapeAttribute(initialHtml)}" data-initial-line="${initialLine}">
 <link rel="stylesheet" href="${css.katex}">
 <link rel="stylesheet" href="${css.hljs}">
 <link rel="stylesheet" href="${css.markdown}">
@@ -430,6 +494,8 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
 <div id="root">
 <div class="markdown-body" id="write"></div>
 </div>
+<script nonce="${nonce}" async src="${mermaidSrc}"></script>
+<script nonce="${nonce}" async src="${morphdomSrc}"></script>
 <script nonce="${nonce}">
 (function(){
   const vscode = acquireVsCodeApi();
@@ -437,6 +503,63 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
   const markdownBody = document.getElementById('write');
   let syncing = false;
   let syncTimer = null;
+
+  // =====================================================================
+  // First paint: the extension embeds the rendered document in
+  // data-initial-md-content (mirroring the built-in preview). Parse and
+  // insert it synchronously so text is visible immediately, before the
+  // ready handshake and before the large mermaid bundle finishes loading.
+  //
+  // The mermaid bundle is loaded with async, so it may start running right
+  // after load while the DOM already contains .mermaid elements. Its default
+  // startOnLoad=true would auto-render them with the default theme before we
+  // have called initialize({startOnLoad:false}) with the VS Code theme
+  // variables. Temporarily rename .mermaid so the auto-run finds nothing;
+  // whenMermaidReady() restores the class right before rendering with the
+  // correct theme (the built-in avoids this race because its small index.js
+  // initializes mermaid before the large bundle finishes loading).
+  // =====================================================================
+  (function renderInitialContent() {
+    const data = document.getElementById('vscode-markdown-preview-data');
+    const content = data && data.getAttribute('data-initial-md-content');
+    if (content) {
+      // Use childNodes (including whitespace text nodes) so the initial DOM
+      // exactly matches what the render message will later feed to morphdom;
+      // mixing .children (element-only) with .childNodes (with text) would
+      // offset every node and make morphdom rebuild the whole document.
+      const nodes = Array.from(new DOMParser().parseFromString(content, 'text/html').body.childNodes);
+      markdownBody.append(...nodes);
+      markdownBody.querySelectorAll('.mermaid').forEach((el) => {
+        el.classList.remove('mermaid');
+        el.classList.add('mermaid-pending');
+      });
+
+      // Initial scroll position: mirror the built-in preview's G(settings.line)
+      // on first paint. The embedded data-initial-line carries the source
+      // editor's current top line so the preview opens scrolled to the same
+      // place as the editor, without waiting for the ready handshake / render
+      // round-trip. Deferred so the initial content is laid out first; the
+      // built-in also defers initial positioning (le() waits for images).
+      const dataEl = document.getElementById('vscode-markdown-preview-data');
+      const initialLineRaw = dataEl && dataEl.getAttribute('data-initial-line');
+      const initialLine = initialLineRaw === null ? 0 : +initialLineRaw;
+      setTimeout(() => {
+        if (isNaN(initialLine)) {
+          return;
+        }
+        rebuildLineEls();
+        scrollToLine(initialLine);
+      }, 0);
+    }
+  })();
+
+  // Disable mermaid's automatic run() on DOMContentLoaded (default
+  // startOnLoad=true would render every .mermaid block with the default theme
+  // before we have applied the VS Code theme variables). Rendering is driven
+  // by renderMermaid() on 'render'/'theme' messages from the extension host.
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({ startOnLoad: false });
+  }
 
   // =====================================================================
   // Verbatim port of the built-in Markdown preview's scroll-sync machinery
@@ -470,6 +593,225 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
         lineEls.push({ element: n, line: i });
       }
     }
+  }
+
+  // =====================================================================
+  // Mermaid diagram rendering.
+  //
+  // Faithful port of the built-in mermaid-markdown-features webview
+  // (vscode/extensions/mermaid-markdown-features/preview-src/shared/):
+  //   - vsCodeTheme.ts  : derive mermaid themeVariables from the live VS Code
+  //                       CSS variables (theme: 'base' + themeVariables)
+  //   - index.ts        : renderMermaidBlocksInElement / renderMermaidElement
+  //
+  // The markdown-it plugin emits every mermaid block as an element with class
+  // mermaid (fenced mermaid blocks become <pre class="mermaid">, the
+  // :::mermaid container becomes <div class="mermaid">). Here we replace
+  // each element's content with the SVG mermaid.render() produces. The source
+  // text is kept in dataset.source so diagrams can be re-rendered with new
+  // themeVariables when the VS Code theme changes.
+  // =====================================================================
+
+  function isDarkVsCodeTheme() {
+    return document.body.classList.contains('vscode-dark')
+      || (document.body.classList.contains('vscode-high-contrast') && !document.body.classList.contains('vscode-high-contrast-light'));
+  }
+
+  function rgbStringToHex(value) {
+    const match = value.match(/^rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*(?:,\\s*([\\d.]+)\\s*)?\\)$/);
+    if (!match) {
+      return undefined;
+    }
+    const r = parseInt(match[1], 10);
+    const g = parseInt(match[2], 10);
+    const b = parseInt(match[3], 10);
+    const a = match[4] !== undefined ? Math.round(parseFloat(match[4]) * 255) : 255;
+    const hex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+    return a < 255
+      ? '#' + hex(r) + hex(g) + hex(b) + hex(a)
+      : '#' + hex(r) + hex(g) + hex(b);
+  }
+
+  function resolveCssColor(cssValue) {
+    const probe = document.createElement('span');
+    probe.style.display = 'none';
+    probe.style.color = cssValue;
+    document.body.appendChild(probe);
+    try {
+      return rgbStringToHex(getComputedStyle(probe).color);
+    } finally {
+      probe.remove();
+    }
+  }
+
+  function readCssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function pickColor() {
+    for (const name of arguments) {
+      if (!readCssVar(name)) {
+        continue;
+      }
+      const hex = resolveCssColor('var(' + name + ')');
+      if (hex) {
+        return hex;
+      }
+    }
+    return undefined;
+  }
+
+  function computeVsCodeMermaidThemeVariables() {
+    const variables = { darkMode: isDarkVsCodeTheme() };
+    function set(key) {
+      const color = pickColor.apply(null, Array.prototype.slice.call(arguments, 1));
+      if (color) {
+        variables[key] = color;
+      }
+    }
+
+    set('background', '--vscode-editor-background');
+    set('textColor', '--vscode-charts-foreground', '--vscode-editor-foreground', '--vscode-foreground');
+    set('lineColor', '--vscode-chart-line', '--vscode-charts-lines', '--vscode-editor-foreground', '--vscode-foreground');
+
+    set('primaryColor', '--vscode-editorWidget-background');
+    set('primaryTextColor', '--vscode-charts-foreground', '--vscode-editor-foreground', '--vscode-foreground');
+    set('primaryBorderColor', '--vscode-chart-line', '--vscode-editorWidget-border', '--vscode-focusBorder');
+    set('mainBkg', '--vscode-editorWidget-background');
+    set('nodeBorder', '--vscode-chart-line', '--vscode-editorWidget-border', '--vscode-focusBorder');
+
+    set('secondaryColor', '--vscode-input-background', '--vscode-editorWidget-background');
+    set('secondaryTextColor', '--vscode-input-foreground', '--vscode-foreground');
+    set('secondaryBorderColor', '--vscode-input-border', '--vscode-editorWidget-border');
+
+    set('tertiaryColor', '--vscode-textBlockQuote-background', '--vscode-input-background');
+    set('tertiaryTextColor', '--vscode-foreground');
+    set('tertiaryBorderColor', '--vscode-textBlockQuote-border', '--vscode-editorWidget-border');
+    set('clusterBkg', '--vscode-textBlockQuote-background', '--vscode-input-background');
+    set('clusterBorder', '--vscode-textBlockQuote-border', '--vscode-editorWidget-border');
+
+    set('noteBkgColor', '--vscode-textBlockQuote-background', '--vscode-editorWidget-background');
+    set('noteTextColor', '--vscode-foreground');
+    set('noteBorderColor', '--vscode-textBlockQuote-border', '--vscode-editorWidget-border');
+
+    set('errorBkgColor', '--vscode-inputValidation-errorBackground', '--vscode-editorError-background');
+    set('errorTextColor', '--vscode-editorError-foreground', '--vscode-foreground');
+
+    set('titleColor', '--vscode-charts-foreground', '--vscode-editor-foreground', '--vscode-foreground');
+    set('edgeLabelBackground', '--vscode-editor-background');
+
+    const chartPalette = [
+      '--vscode-charts-blue',
+      '--vscode-charts-green',
+      '--vscode-charts-orange',
+      '--vscode-charts-red',
+      '--vscode-charts-purple',
+      '--vscode-charts-yellow',
+    ];
+    for (let i = 0; i < chartPalette.length; i++) {
+      set('pie' + (i + 1), chartPalette[i]);
+      set('cScale' + i, chartPalette[i]);
+    }
+
+    const fontFamily = readCssVar('--vscode-font-family');
+    if (fontFamily) {
+      variables.fontFamily = fontFamily;
+    }
+    const fontSize = readCssVar('--vscode-font-size');
+    if (fontSize) {
+      variables.fontSize = fontSize;
+    }
+    return variables;
+  }
+
+  function getMermaidErrorMessage(error) {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (error && typeof error === 'object') {
+      const candidate = error;
+      if (typeof candidate.message === 'string' && candidate.message) {
+        return candidate.message;
+      }
+      if (typeof candidate.str === 'string' && candidate.str) {
+        return candidate.str;
+      }
+    }
+    return String(error);
+  }
+
+  let mermaidSeq = 0;
+  let lastMermaidThemeFingerprint = '';
+  function renderMermaid() {
+    if (typeof mermaid === 'undefined') {
+      return Promise.resolve();
+    }
+
+    const themeVariables = computeVsCodeMermaidThemeVariables();
+    const fingerprint = JSON.stringify(themeVariables);
+    const themeChanged = fingerprint !== lastMermaidThemeFingerprint;
+    lastMermaidThemeFingerprint = fingerprint;
+
+    // Only re-initialize mermaid when the theme actually changed. initialize()
+    // is expensive (it resets every diagram's config), so calling it on every
+    // render makes typing janky. The built-in mermaid-markdown-features webview
+    // does exactly this: initialize happens once, render() reuses the config.
+    if (themeChanged) {
+      mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables });
+    }
+
+    const tasks = [];
+    const usedIds = new Set();
+
+    const renderOne = (container) => {
+      const source = (container.textContent || '').trim();
+      if (!source) {
+        return;
+      }
+      // Skip diagrams whose source did not change since the last render: the
+      // previous SVG is still in the DOM (kept by the render message handler
+      // which re-uses existing mermaid containers instead of re-setting
+      // innerHTML for unchanged sources). Re-rendering unchanged diagrams on
+      // every keystroke is the main source of input latency.
+      if (container.dataset.source === source && container.querySelector('svg')) {
+        return;
+      }
+      container.dataset.source = source;
+      let id = 'mermaid-' + (mermaidSeq++);
+      while (usedIds.has(id)) {
+        id = 'mermaid-' + (mermaidSeq++);
+      }
+      usedIds.add(id);
+      tasks.push(mermaid.parse(source).then(() => mermaid.render(id, source)).then(({ svg }) => {
+        container.innerHTML = svg;
+      }).catch((error) => {
+        const pre = document.createElement('pre');
+        pre.className = 'mermaid-error';
+        pre.innerText = getMermaidErrorMessage(error);
+        container.innerHTML = '';
+        container.appendChild(pre);
+      }));
+    };
+
+    // Re-render every diagram when the theme changed so colours follow the
+    // VS Code theme (sources are still in dataset.source after first render).
+    if (themeChanged) {
+      markdownBody.querySelectorAll('.mermaid[data-rendered="true"]').forEach((el) => {
+        el.innerHTML = '';
+        if (el.dataset.source) {
+          el.textContent = el.dataset.source;
+        }
+        el.dataset.rendered = 'false';
+      });
+    }
+
+    // Fresh (unrendered) mermaid blocks emitted by the markdown-it plugin.
+    markdownBody.querySelectorAll('.mermaid:not([data-rendered="true"])').forEach((container) => {
+      container.dataset.rendered = 'true';
+      renderOne(container);
+    });
+
+    return Promise.all(tasks);
   }
 
   // Built-in isVisible: skip hidden/collapsed/zero-size elements.
@@ -678,16 +1020,140 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
   window.addEventListener('message', (event) => {
     const m = event.data;
     if (m.type === 'render') {
-      markdownBody.innerHTML = m.html;
-      rebuildLineEls();
+      // Incremental DOM update exactly like the built-in Markdown preview
+      // (extensions/markdown-language-features/preview-src/index.ts
+      //  'updateContent' handler): parse the new content and let morphdom
+      //  patch only the changed nodes. Already-rendered mermaid containers
+      //  whose source did not change are kept (their <svg> is preserved), so
+      //  typing does not re-run every diagram.
+      const parser = new DOMParser();
+      const newContent = parser.parseFromString(m.html, 'text/html');
+      for (const metaElement of Array.from(newContent.querySelectorAll('meta'))) {
+        if (metaElement.hasAttribute('http-equiv')) {
+          metaElement.remove();
+        }
+      }
+      const newRoot = newContent.querySelector('.markdown-body') || newContent.body;
+      // Node equality mirroring the built-in Markdown preview
+      // (preview-src/index.ts: areNodesEqual). A node is "equal" when a full
+      // morphdom update would be a no-op: same tag, text, and attributes
+      // (skipping 'open' for details and 'data-line', which is copied over
+      // separately). Notably this treats an already-rendered mermaid container
+      // (whose content is the generated <svg>) as different from the incoming
+      // raw-source <pre class="mermaid">, so the first branch below handles
+      // the mermaid keep/drop decision before the generic comparison.
+      const areNodesEqual = (a, b) => {
+        const skippedAttrs = ['open'];
+        if (a.isEqualNode(b)) {
+          return true;
+        }
+        if (a.tagName !== b.tagName || a.textContent !== b.textContent) {
+          return false;
+        }
+        const aAttrs = Array.from(a.attributes).filter(attr => !skippedAttrs.includes(attr.name));
+        const bAttrs = Array.from(b.attributes).filter(attr => !skippedAttrs.includes(attr.name));
+        if (aAttrs.length !== bAttrs.length) {
+          return false;
+        }
+        for (let i = 0; i < aAttrs.length; ++i) {
+          const aAttr = aAttrs[i];
+          const bAttr = bAttrs[i];
+          if (aAttr.name !== bAttr.name) {
+            return false;
+          }
+          if (aAttr.value !== bAttr.value && aAttr.name !== 'data-line') {
+            return false;
+          }
+        }
+        const aChildren = Array.from(a.children);
+        const bChildren = Array.from(b.children);
+        return aChildren.length === bChildren.length && aChildren.every((x, i) => areNodesEqual(x, bChildren[i]));
+      };
+      morphdom(markdownBody, newRoot, {
+        childrenOnly: true,
+        onBeforeElUpdated: (fromEl, toEl) => {
+          // Mermaid containers: the live node's content is the rendered
+          // <svg>, the incoming node still holds the raw source, so a plain
+          // equality comparison would wrongly replace the rendered diagram.
+          // Compare against the stored source instead and keep the live SVG.
+          if (fromEl instanceof HTMLElement && fromEl.classList.contains('mermaid')) {
+            const newSrc = (toEl.textContent || '').trim();
+            if (fromEl.dataset.source === newSrc && fromEl.querySelector('svg')) {
+              return false;
+            }
+          }
+          if (areNodesEqual(fromEl, toEl)) {
+            // areEqual doesn't look at 'data-line' so copy those over manually
+            const fromLines = fromEl.querySelectorAll('[data-line]');
+            const toLines = toEl.querySelectorAll('[data-line]');
+            for (let i = 0; i < fromLines.length; ++i) {
+              const fromChild = fromLines[i];
+              const toChild = toLines[i];
+              if (toChild) {
+                fromChild.setAttribute('data-line', toChild.getAttribute('data-line') || '');
+              }
+            }
+            return false;
+          }
+          if (fromEl.tagName === 'DETAILS' && toEl.tagName === 'DETAILS') {
+            if (fromEl.hasAttribute('open')) {
+              toEl.setAttribute('open', '');
+            }
+          }
+          return true;
+        }
+      });
+      renderMermaid().then(() => rebuildLineEls());
     } else if (m.type === 'theme') {
       document.body.classList.toggle('vscode-dark', m.dark);
       document.body.classList.toggle('vscode-light', !m.dark);
+      renderMermaid().then(() => rebuildLineEls());
     } else if (m.type === 'updateView') {
       afterImages(() => scrollToLine(m.line));
     }
   });
-  vscode.postMessage({ type: 'ready' });
+  // The mermaid bundle is loaded with async so it never blocks first paint
+  // (the initial content is already in the DOM). Once it finishes loading,
+  // render the first-paint diagrams before signalling ready, so the extension
+  // host's follow-up render message does not race an unloaded mermaid. If it
+  // is already available (cached), render synchronously.
+  const whenMermaidReady = () => {
+    if (typeof mermaid !== 'undefined' && typeof mermaid.render === 'function') {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const poll = setInterval(() => {
+        if (typeof mermaid !== 'undefined' && typeof mermaid.render === 'function') {
+          clearInterval(poll);
+          resolve();
+        }
+      }, 30);
+      // Safety: never wait forever even if the bundle fails to load.
+      setTimeout(() => { clearInterval(poll); resolve(); }, 10000);
+    });
+  };
+  whenMermaidReady().then(() => {
+    // Restore the .mermaid class that renderInitialContent temporarily renamed
+    // (see the first-paint block) so renderMermaid() can find the diagrams.
+    markdownBody.querySelectorAll('.mermaid-pending').forEach((el) => {
+      el.classList.remove('mermaid-pending');
+      el.classList.add('mermaid');
+    });
+    mermaid.initialize({ startOnLoad: false });
+    return renderMermaid();
+  }).then(() => {
+    // Diagrams are in place and the document height is final: re-apply the
+    // initial scroll position so it is not shifted by the SVG reflows (mirrors
+    // the built-in restoring scrollProgress after mermaid renders).
+    const dataEl = document.getElementById('vscode-markdown-preview-data');
+    const initialLineRaw = dataEl && dataEl.getAttribute('data-initial-line');
+    const initialLine = initialLineRaw === null ? 0 : +initialLineRaw;
+    if (!isNaN(initialLine)) {
+      rebuildLineEls();
+      scrollToLine(initialLine);
+    }
+    vscode.postMessage({ type: 'ready' });
+  });
 })();
 </script>
 </body>
