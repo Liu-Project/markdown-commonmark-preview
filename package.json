@@ -2,7 +2,7 @@
   "name": "markdown-commonmark-preview",
   "displayName": "Markdown CommonMark Preview & Editing",
   "description": "CommonMark-style Markdown preview (custom editor with built-in-preview-identical scroll sync) plus familiar Markdown editing commands. Rendering built on open-source KaTeX / mermaid / highlight.js.",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "publisher": "Liu-Hongcun",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -141,6 +141,20 @@
       {
         "command": "markdown-commonmark-preview.printToHtmlBatch",
         "title": "%command.printToHtmlBatch.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.export",
+        "title": "%command.export.title%"
+      },
+      {
+        "command": "markdown-commonmark-preview.exportToHtml",
+        "title": "%command.exportToHtml.title%",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "markdown-commonmark-preview.exportToPdf",
+        "title": "%command.exportToPdf.title%",
+        "icon": "$(file-pdf)"
       },
       {
         "command": "markdown-commonmark-preview.editing.toggleCodeSpan",
@@ -328,6 +342,16 @@
           "command": "markdown-commonmark-preview.printToHtmlBatch",
           "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && workspaceFolderCount >= 1",
           "group": "markdown.print@2"
+        },
+        {
+          "command": "markdown-commonmark-preview.exportToHtml",
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/",
+          "group": "markdown.export@1"
+        },
+        {
+          "command": "markdown-commonmark-preview.exportToPdf",
+          "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/",
+          "group": "markdown.export@2"
         }
       ],
       "editor/title": [
@@ -360,6 +384,16 @@
           "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
           "command": "markdown-commonmark-preview.checkTaskList",
           "group": "navigation@7"
+        },
+        {
+          "when": "activeCustomEditorId == 'markdown-commonmark-preview.preview'",
+          "command": "markdown-commonmark-preview.exportToHtml",
+          "group": "navigation@8"
+        },
+        {
+          "when": "activeCustomEditorId == 'markdown-commonmark-preview.preview'",
+          "command": "markdown-commonmark-preview.exportToPdf",
+          "group": "navigation@9"
         }
       ],
       "explorer/context": [
@@ -404,6 +438,15 @@
         },
         {
           "command": "markdown-commonmark-preview.printToHtmlBatch"
+        },
+        {
+          "command": "markdown-commonmark-preview.export"
+        },
+        {
+          "command": "markdown-commonmark-preview.exportToHtml"
+        },
+        {
+          "command": "markdown-commonmark-preview.exportToPdf"
         },
         {
           "command": "markdown-commonmark-preview.editing.toggleCodeSpan"
@@ -595,6 +638,27 @@
           "type": "boolean",
           "default": true,
           "description": "%config.print.validateUrls.description%"
+        },
+        "markdown-commonmark-preview.export.chromePath": {
+          "type": "string",
+          "default": "",
+          "description": "%config.export.chromePath.description%",
+          "scope": "resource"
+        },
+        "markdown-commonmark-preview.export.headingHierarchy": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.export.headingHierarchy.description%"
+        },
+        "markdown-commonmark-preview.export.pdfPageSize": {
+          "type": "string",
+          "default": "A4",
+          "description": "%config.export.pdfPageSize.description%"
+        },
+        "markdown-commonmark-preview.export.pdfMargin": {
+          "type": "string",
+          "default": "20mm",
+          "description": "%config.export.pdfMargin.description%"
         },
         "markdown-commonmark-preview.showActionButtons": {
           "type": "boolean",

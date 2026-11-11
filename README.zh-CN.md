@@ -35,7 +35,7 @@ VS Code 内置 Markdown 预览已经很好了，但本扩展在保持「和内�
 | 表格格式化 | ✅ | ❌ | 一键对齐 |
 | 目录生成 / 更新 | ✅ | ❌ | 标题锚点跳转 |
 | 列表 / 任务 / 公式等编辑命令 | ✅ | ❌ | 快捷键操作 |
-| 导出 HTML | ✅ | ❌ | 带主题、图片可选 Base64 |
+| 导出 HTML / PDF | ✅ | ❌ | 效果与预览一致，PDF 自动生成标题层级 |
 
 **典型使用场景**：技术文档写作、含数学公式的笔记、含 mermaid 图表的架构设计、公众号 / 博客排版。
 
@@ -68,8 +68,18 @@ VS Code 内置 Markdown 预览已经很好了，但本扩展在保持「和内�
 | Create / Update TOC | - | 生成 / 更新目录 |
 | Format Table | - | 表格对齐格式化 |
 | Print to HTML | - | 导出 HTML（带主题） |
+| Export to HTML / PDF | - | 导出（效果与预览一致） |
 
 > macOS 上快捷键使用 `Cmd` 代替 `Ctrl`。
+
+### 导出（HTML / PDF）
+
+导出结果与预览效果一致。命令面板执行 `Export Markdown CommonMark document` 可选择格式，也可直接使用 `Export ... to HTML / PDF`（编辑器右键菜单、预览标题栏、**预览右下角导出按钮**均有入口）。
+
+- **HTML**：默认生成**自包含** HTML（所有样式与脚本本地内联，无需联网，可离线打开），效果与预览一致；**mermaid 图在导出时由 Chrome/Edge 预渲染为内嵌 SVG，打开即显示渲染后的图**（无 Chrome/Edge 时自动回退为内联脚本、打开时渲染）；无公式 / 无 mermaid 图时自动精简体积。
+- **PDF**：使用无头 Chrome/Edge 打印，正文与预览一致；文档有标题层级时**自动生成 PDF 书签大纲**（多级目录）。未安装 Chrome/Edge 时提示配置 `markdown-commonmark-preview.export.chromePath`。
+
+**已知限制**：PDF 书签依赖较新的 Chrome/Edge 版本，低版本自动跳过书签、不影响正文导出。
 
 ### 渲染能力
 
@@ -172,6 +182,7 @@ code --install-extension markdown-commonmark-preview-*.vsix
 
 最新版本变更详见 [CHANGELOG.md](./CHANGELOG.md)。
 
+- **0.2.12**：新增 **Mermaid 图表预览**——` ```mermaid ` 围栏代码块与 `:::mermaid` 容器块在预览中渲染为图表（与 VS Code 内置 Markdown 预览一致），颜色跟随 VS Code 深色 / 浅色主题并随编辑实时更新。同时新增"导出"功能，可将当前 Markdown 文档导出为 **HTML / PDF**，导出效果与预览一致：**HTML** 为**自包含**文件（所有样式与脚本内联、可离线打开），**mermaid 图在导出时预渲染为内嵌 SVG**；**PDF** 通过无头 Chrome/Edge 打印，并**自动生成标题书签大纲**。入口包括命令面板、编辑器右键菜单、预览标题栏与预览右下角**导出浮动按钮**。
 - **0.2.11**：预览中的未知 / 自定义 XML 标签（如 `<Schedules>`、`<PartitionWindow/>`）改为以 Typora 风格的浅灰色文本显示（标签名与属性均可见），不再被浏览器吞掉而完全隐藏；保留原有换行与缩进，正文颜色不受影响。标准 HTML 标签（`<img>`、`<table>`、`<div>` 等）仍保持真实渲染。自定义编辑器预览与 VS Code 内置 Markdown 预览（Ctrl+K V）均生效。
 - **0.2.10**：修复预览不随编辑实时更新的问题：编辑器中修改 Markdown 后预览立即刷新（含删除列表项等场景），行为与 VS Code 内置 Markdown 预览一致。
 - **0.2.9**：滚动联动仅在并排窗口时生效，同一文件多窗口并排时一起联动；右键预览改在当前窗口打开且已有则激活；预览标签页新增专属图标。

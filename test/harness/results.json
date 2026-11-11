@@ -1,0 +1,252 @@
+{
+  "results": [
+    {
+      "name": "A1 标题自动提取（<!-- title: -->）",
+      "pass": true,
+      "detail": "title=导出功能验收样例"
+    },
+    {
+      "name": "A2 HTML 包含 <style>（默认带样式）",
+      "pass": true,
+      "detail": "styles present"
+    },
+    {
+      "name": "A3 mermaid 预渲染为内嵌 SVG（无需 JS）",
+      "pass": true,
+      "detail": "mermaid prerendered"
+    },
+    {
+      "name": "A3b 预渲染后不再内联 mermaid.min.js",
+      "pass": true,
+      "detail": "mermaid runtime skipped"
+    },
+    {
+      "name": "A3c preview.js 仍内联作兜底",
+      "pass": true,
+      "detail": "preview.js inlined"
+    },
+    {
+      "name": "A4 .markdown-body 容器包裹",
+      "pass": true,
+      "detail": "wrapper"
+    },
+    {
+      "name": "A5 KaTeX 字体内联为 data:font/woff2",
+      "pass": true,
+      "detail": "fonts inlined"
+    },
+    {
+      "name": "A6 相对图片已处理（file:/// 绝对路径）",
+      "pass": true,
+      "detail": "image abs path"
+    },
+    {
+      "name": "A7 .md 链接转换为 .html",
+      "pass": true,
+      "detail": "link converted"
+    },
+    {
+      "name": "A8 表格/代码/引用结构保留",
+      "pass": true,
+      "detail": "structure"
+    },
+    {
+      "name": "A9 主题默认 light（vscode-light）",
+      "pass": true,
+      "detail": "light theme"
+    },
+    {
+      "name": "A10 自包含（无外链 CDN 样式）",
+      "pass": true,
+      "detail": "no external css links"
+    },
+    {
+      "name": "A11 主题 dark（vscode-dark + 深色背景）",
+      "pass": true,
+      "detail": "dark theme"
+    },
+    {
+      "name": "B1 生成 .html 文件",
+      "pass": true,
+      "detail": "/tmp/mcp-export-test-msH4BA/b-sample.html"
+    },
+    {
+      "name": "B2 HTML 默认带 styles",
+      "pass": true,
+      "detail": "styles"
+    },
+    {
+      "name": "B3 HTML 成功提示",
+      "pass": true,
+      "detail": "已导出到 /tmp/mcp-export-test-msH4BA/b-sample.html"
+    },
+    {
+      "name": "C0 导出 HTML 文件已含预渲染 SVG（fenced + container 共 2 个）",
+      "pass": true,
+      "detail": "static svg count"
+    },
+    {
+      "name": "C1 导出 HTML 无残留 .mermaid 源码块",
+      "pass": true,
+      "detail": "no raw mermaid source"
+    },
+    {
+      "name": "C2 Chrome 打开后 mermaid SVG 仍存在",
+      "pass": true,
+      "detail": "svg after chrome open"
+    },
+    {
+      "name": "C3 无 mermaid 渲染错误（检查渲染出的错误元素）",
+      "pass": true,
+      "detail": "no mermaid-error"
+    },
+    {
+      "name": "C4 KaTeX 公式已渲染（.katex 类）",
+      "pass": true,
+      "detail": "katex rendered"
+    },
+    {
+      "name": "C5 代码高亮（hljs 类）",
+      "pass": true,
+      "detail": "hljs"
+    },
+    {
+      "name": "C6 图片已加载（img src 存在）",
+      "pass": true,
+      "detail": "img"
+    },
+    {
+      "name": "C7 任务列表 checkbox 存在",
+      "pass": true,
+      "detail": "task list"
+    },
+    {
+      "name": "C2-1 无 Chrome 时 mermaid 源码块保留",
+      "pass": true,
+      "detail": "raw source kept"
+    },
+    {
+      "name": "C2-2 无 Chrome 时内联 mermaid.min.js 兜底（浏览器打开可渲染）",
+      "pass": true,
+      "detail": "mermaid runtime inlined"
+    },
+    {
+      "name": "C2-3 无 Chrome 时 preview.js 内联",
+      "pass": true,
+      "detail": "preview.js inlined"
+    },
+    {
+      "name": "D1 生成 .pdf 文件",
+      "pass": true,
+      "detail": "size=339234"
+    },
+    {
+      "name": "D2 PDF 含书签大纲 /Outlines（标题层级）",
+      "pass": true,
+      "detail": "outline present"
+    },
+    {
+      "name": "D3 PDF 含标题书签条目",
+      "pass": true,
+      "detail": "titles count"
+    },
+    {
+      "name": "D4 PDF 页面尺寸 A4",
+      "pass": true,
+      "detail": "pagesize=594.96 x 841.92 pts (A4)"
+    },
+    {
+      "name": "D5 PDF 正文文本存在",
+      "pass": true,
+      "detail": "text"
+    },
+    {
+      "name": "D6 PDF 渲染了 mermaid 图（SVG 矢量文字在文本中）",
+      "pass": true,
+      "detail": "mermaid text"
+    },
+    {
+      "name": "D7 PDF 渲染了公式（E = mc）",
+      "pass": true,
+      "detail": "math text"
+    },
+    {
+      "name": "D8 PDF 成功提示",
+      "pass": true,
+      "detail": "已导出到 /tmp/mcp-export-test-msH4BA/d-sample.pdf"
+    },
+    {
+      "name": "E1 headingHierarchy=false 时 PDF 无 /Outlines",
+      "pass": true,
+      "detail": "no outline"
+    },
+    {
+      "name": "F1 提示 Chrome 未找到（中文）",
+      "pass": true,
+      "detail": "未找到 Chrome/Edge。请安装 Chrome 或 Edge，或在设置中配置 'markdown-commonmark-preview.export.chromePath'。 | 导出失败：输出文件为空。"
+    },
+    {
+      "name": "F2 未生成 PDF 文件",
+      "pass": true,
+      "detail": "no pdf"
+    },
+    {
+      "name": "F3 未残留临时文件",
+      "pass": true,
+      "detail": "no temp"
+    },
+    {
+      "name": "J1 export（picker->HTML 第一项）生成 html",
+      "pass": true,
+      "detail": "html created"
+    },
+    {
+      "name": "J3 预览按钮传 URI 导出 HTML（活动编辑器非目标文档也可导出）",
+      "pass": true,
+      "detail": "html created"
+    },
+    {
+      "name": "K1 无活动编辑器时提示无有效 Markdown 文件",
+      "pass": true,
+      "detail": "没有有效的 Markdown 文件。"
+    },
+    {
+      "name": "L1 printToHtml 仍生成 HTML",
+      "pass": true,
+      "detail": "/tmp/mcp-export-test-msH4BA/l-sample.html"
+    },
+    {
+      "name": "L2 标题保留",
+      "pass": true,
+      "detail": "title"
+    },
+    {
+      "name": "L3 图片 base64 内联",
+      "pass": true,
+      "detail": "base64 img"
+    },
+    {
+      "name": "L4 .md 链接转 .html",
+      "pass": true,
+      "detail": "links"
+    },
+    {
+      "name": "L5 printToHtml pureHtml 模式（无 DOCTYPE 包裹）",
+      "pass": true,
+      "detail": "pure html"
+    },
+    {
+      "name": "N1 空文档导出 HTML 不报错",
+      "pass": true,
+      "detail": "empty ok"
+    },
+    {
+      "name": "O1 中文路径 PDF 导出成功",
+      "pass": true,
+      "detail": "pdf"
+    }
+  ],
+  "pass": 49,
+  "fail": 0,
+  "work": "/tmp/mcp-export-test-msH4BA"
+}

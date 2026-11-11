@@ -11,6 +11,7 @@ node_modules/**
 src/**
 syntaxes/**
 out/**
+test/**
 build.js
 make_icon.py
 tsconfig.json

@@ -98,10 +98,13 @@ export function renderMarkdownBody(text: string, resolveImage?: (src: string) =>
   });
 }
 
-const COMMON_CSS = `
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;}
-  body.vscode-body{padding:0;background-color:var(--vscode-editor-background);}
-  #root{width:100%;height:100vh;overflow-y:auto;overflow-x:hidden;background:var(--vscode-editor-background);box-sizing:border-box;padding:1em 26px;}
+/**
+ * Content-rendering CSS shared by the custom-editor preview and the export
+ * pipeline. The preview-specific layout (html/body/#root, scroll behaviour,
+ * the trailing blank space) is NOT included so the exported HTML keeps a
+ * normal scrollable page while rendering the markdown content identically.
+ */
+export const COMMON_CONTENT_CSS = `
   .katex-display{overflow-x:auto;overflow-y:hidden;}
   .commonmark-diagram{margin:0.8em 0;text-align:center;}
   .commonmark-diagram pre{text-align:left;}
@@ -118,15 +121,27 @@ const COMMON_CSS = `
   /* Typora-style unknown XML/HTML tags: shown as low-contrast grey text. */
   .markdown-body .md-html-tag{color:#a0a0a0;white-space:pre-wrap;}
   body.vscode-dark .markdown-body .md-html-tag{color:#8b949e;}
+  /* Code blocks follow the theme instead of the fixed light github hljs theme. */
+  .markdown-body pre{background-color:var(--vscode-textCodeBlock-background, var(--vscode-editor-background));}
+  .markdown-body code.hljs{background:transparent;color:var(--vscode-editor-foreground);}
+  .markdown-body pre code.hljs{font-family:var(--vscode-editor-font-family, monospace);}
+`;
+
+const COMMON_CSS = `
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+  body.vscode-body{padding:0;background-color:var(--vscode-editor-background);}
+  #root{width:100%;height:100vh;overflow-y:auto;overflow-x:hidden;background:var(--vscode-editor-background);box-sizing:border-box;padding:1em 26px;}
+  ${COMMON_CONTENT_CSS}
   /* Scroll beyond the last line like the built-in preview and the editor:
      keeps a full viewport-height of blank space below the content so the last
      line can sit in the middle of the preview, matching the editor's bottom
      behaviour. */
   .markdown-body::after{content:'';display:block;height:calc(100vh - 22px);}
-  /* Code blocks follow the theme instead of the fixed light github hljs theme. */
-  .markdown-body pre{background-color:var(--vscode-textCodeBlock-background, var(--vscode-editor-background));}
-  .markdown-body code.hljs{background:transparent;color:var(--vscode-editor-foreground);}
-  .markdown-body pre code.hljs{font-family:var(--vscode-editor-font-family, monospace);}
+  /* Floating export button in the bottom-right corner of the preview. */
+  #mcp-export-btn{position:fixed;right:18px;bottom:18px;width:36px;height:36px;padding:0;border:none;border-radius:8px;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);cursor:pointer;opacity:.1;display:flex;align-items:center;justify-content:center;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  #mcp-export-btn:hover{opacity:1;}
+  #mcp-export-btn:focus{outline:1px solid var(--vscode-focusBorder);}
+  #mcp-export-btn svg{width:18px;height:18px;fill:currentColor;}
 `;
 
 function getNonce(): string {
@@ -429,6 +444,13 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       // InCenterIfOutsideViewport would leave the editor unmoved while the
       // target line is still inside the viewport, making it feel laggy.
       subs.push(webview.onDidReceiveMessage((msg) => {
+        if (msg.type === "export") {
+          // Trigger the export command (format picker) from the floating
+          // bottom-right button in the preview webview, targeting the source
+          // document this preview renders.
+          vscode.commands.executeCommand('markdown-commonmark-preview.export', findSourceDocument().uri);
+          return;
+        }
         if (msg.type !== "revealLine") {
           return;
         }
@@ -494,6 +516,9 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
 <div id="root">
 <div class="markdown-body" id="write"></div>
 </div>
+<button id="mcp-export-btn" title="Export Markdown CommonMark document" aria-label="Export Markdown CommonMark document">
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a1 1 0 0 1 1 1v9.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 13.6V4a1 1 0 0 1 1-1zM4 20a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1z"/></svg>
+</button>
 <script nonce="${nonce}" async src="${mermaidSrc}"></script>
 <script nonce="${nonce}" async src="${morphdomSrc}"></script>
 <script nonce="${nonce}">
@@ -503,6 +528,15 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
   const markdownBody = document.getElementById('write');
   let syncing = false;
   let syncTimer = null;
+
+  // Floating export button (bottom-right): asks the extension host to run the
+  // export command (format picker) for the current markdown document.
+  const exportBtn = document.getElementById('mcp-export-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function () {
+      vscode.postMessage({ type: 'export' });
+    });
+  }
 
   // =====================================================================
   // First paint: the extension embeds the rendered document in

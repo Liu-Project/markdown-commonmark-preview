@@ -14,6 +14,7 @@ import { extendMarkdownIt } from "./markdown-it-plugin-provider";
 import { config as configNls } from './nls';
 import * as preview from './preview';
 import * as print from './print';
+import * as exportModule from './export';
 import * as tableFormatter from './tableFormatter';
 import * as toc from './toc';
 import { importZolaSlug } from './util/slugify';
@@ -58,6 +59,8 @@ function activateMdExt(context: ExtensionContext) {
     completion.activate(context);
     // Print to PDF
     print.activate(context);
+    // Export to HTML / PDF
+    exportModule.activate(context);
     // Table formatter
     tableFormatter.activate(context);
     // Auto show preview to side

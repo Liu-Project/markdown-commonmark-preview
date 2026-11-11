@@ -4,7 +4,7 @@
 
 > A CommonMark-style Markdown preview with **scroll sync identical to the built-in VS Code preview**, plus familiar Markdown editing commands (bold, italic, strikethrough, lists, tasks, TOC, table formatting, …) so writing Markdown is faster.
 
-[![Open VSX Version](https://img.shields.io/open-vsx/v/Liu-Hongcun/markdown-commonmark-preview)](https://open-vsx.org/extension/Liu-Hongcun/markdown-commonmark-preview)
+[![Open VSX Version](https://img.shields.io/open-vsx/v/Liu-Hongcun/markdown-commonmark-preview)](https://open-vsx.org/extension/Liu-Hongcun/.markdown-commonmark-preview)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/Liu-Hongcun/markdown-commonmark-preview)](https://open-vsx.org/extension/Liu-Hongcun/markdown-commonmark-preview)
 [![Open VSX Rating](https://img.shields.io/open-vsx/rating/Liu-Hongcun/markdown-commonmark-preview)](https://open-vsx.org/extension/Liu-Hongcun/markdown-commonmark-preview)
 [![GitHub Stars](https://img.shields.io/github/stars/Liu-Project/markdown-commonmark-preview)](https://github.com/Liu-Project/markdown-commonmark-preview)
@@ -35,7 +35,7 @@ VS Code's built-in Markdown preview is already great. This extension keeps **the
 | Table formatting | ✅ | ❌ | One-click alignment |
 | TOC create / update | ✅ | ❌ | Anchor jumps |
 | List / task / math editing commands | ✅ | ❌ | Keyboard shortcuts |
-| Export to HTML | ✅ | ❌ | With theme, optional Base64 images |
+| Export HTML / PDF | ✅ | ❌ | Matches the preview; PDF gets a heading hierarchy |
 
 **Typical use cases**: technical documentation, math-heavy notes, architecture designs with mermaid diagrams, blog / newsletter writing.
 
@@ -67,9 +67,18 @@ VS Code's built-in Markdown preview is already great. This extension keeps **the
 | Toggle Task List | `Alt+C` | Check / uncheck task |
 | Create / Update TOC | - | Generate / update table of contents |
 | Format Table | - | Align table formatting |
-| Print to HTML | - | Export HTML (with theme) |
+| Export to HTML / PDF | - | Export (matches the preview) |
 
 > On macOS use `Cmd` instead of `Ctrl`.
+
+### Export (HTML / PDF)
+
+The exported result matches the preview. Run `Export Markdown CommonMark document` in the command palette to pick a format, or use `Export ... to HTML / PDF` directly (available in the editor context menu, the preview title bar, and the **export button in the bottom-right corner of the preview**).
+
+- **HTML**: by default produces a **self-contained** HTML file (all CSS/JS inlined locally, works offline) that matches the preview; **mermaid diagrams are pre-rendered to inline SVGs during export via Chrome/Edge, so they show up rendered as soon as the file is opened** (without Chrome/Edge, the mermaid runtime is inlined as a fallback and rendering happens at open time); the bundle is automatically trimmed when the document has no math / mermaid.
+- **PDF**: printed with headless Chrome/Edge, identical body to the preview; when the document has headings, a **PDF outline/bookmark hierarchy is generated automatically** (multi-level TOC). If Chrome/Edge is missing, configure `markdown-commonmark-preview.export.chromePath`.
+
+**Known limitations**: PDF bookmarks require a recent Chrome/Edge; older versions skip the bookmark outline without affecting the exported content.
 
 ### Rendering capabilities
 
@@ -170,6 +179,7 @@ If you like this project:
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full changelog.
 
+- **0.2.12**: New **Mermaid diagram preview** — `` ```mermaid `` fenced blocks and `:::mermaid` containers now render as diagrams in the preview (identical to the VS Code built-in Markdown preview), with colors following the active VS Code theme and live updates while editing. Plus a new **export** feature — export the current Markdown document to **HTML / PDF** with output identical to the preview. HTML produces a **self-contained** file (all styles/scripts inlined, works offline) with **mermaid diagrams pre-rendered to inline SVGs**; PDF is printed via headless Chrome/Edge and automatically generates a **heading bookmark outline**. Entries include the command palette, the editor context menu, the preview title bar and the floating export button in the bottom-right corner of the preview.
 - **0.2.11**: Unknown/custom XML tags in the preview (e.g. `<Schedules>`, `<PartitionWindow/>`) are now shown as low-contrast grey text (Typora-style), keeping tag name and attributes visible instead of being swallowed by the browser; line breaks and indentation are preserved and normal text is unaffected. Standard HTML tags (`<img>`, `<table>`, `<div>`, ...) still render for real. Applies to both the custom-editor preview and the built-in Markdown preview (Ctrl+K V).
 - **0.2.10**: Fixed the preview not updating while editing — the preview now refreshes immediately when you edit the Markdown (including removing list items), matching the built-in VS Code Markdown preview.
 - **0.2.9**: Scroll sync only in side-by-side windows; all side-by-side windows of the same file follow together; context-menu preview opens in place and activates an existing preview; dedicated preview tab icon.

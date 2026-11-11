@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.12] - 2026-11-11
+
+### Added
+
+- 新增 **Mermaid 图表预览**：` ```mermaid ` 围栏代码块与 `:::mermaid` 容器块在预览中渲染为 mermaid 图表（与 VS Code 内置 Markdown 预览一致），颜色跟随 VS Code 深色 / 浅色主题并随编辑实时更新，语法错误以错误样式提示。支持 flowchart / sequence / gantt / class / state / pie / er / journey / gitGraph / mindmap / timeline 等图表类型。
+- 新增"导出"功能，支持将当前 Markdown 文档导出为 **HTML / PDF**，导出效果与预览一致：
+  - **HTML**：默认生成带完整样式的自包含 HTML 文件（所有 CSS/JS 本地内联，无需联网），浏览器直接打开即可还原预览效果（含 KaTeX 公式、代码高亮、任务列表、GitHub Alert 等）；**mermaid 图在导出时由 Chrome/Edge 预渲染为内嵌 SVG，打开即显示渲染后的图（不依赖页面脚本）**，无 Chrome/Edge 时自动回退为内联 mermaid 脚本、打开时渲染；文档无数学公式 / mermaid 时自动精简体积。
+  - **PDF**：通过无头 Chrome/Edge 打印同一份 HTML，正文与预览一致；标题层级自动生成 PDF 书签大纲（多级目录），可通过 `markdown-commonmark-preview.export.headingHierarchy` 关闭。
+- 新增命令：`Export Markdown CommonMark document`（格式选择）、`... to HTML / PDF`（直接导出）；命令面板、编辑器右键菜单、预览标题栏按钮均可触发。
+- 新增配置：`export.chromePath`、`export.headingHierarchy`、`export.pdfPageSize`、`export.pdfMargin`。
+- 预览右下角新增**导出**浮动按钮（不透明度 10%，悬停变为不透明），点击弹出格式选择（HTML / PDF），与命令面板入口一致。
+
+### Removed
+
+- 移除 **Word（.docx）导出**功能：Word 导出在图片尺寸、代码块、未知标签等多处仍存在不稳定问题且短期内无法收敛，为避免影响整体导出体验，已将其从命令、菜单、配置与依赖（pandoc / html-to-docx）中移除。导出能力保留 **HTML / PDF** 两种格式。
+
 ## [0.2.11] - 2026-11-03
 
 ### Added
