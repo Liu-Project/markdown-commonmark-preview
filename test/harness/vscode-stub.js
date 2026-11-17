@@ -82,13 +82,15 @@ function makeConfiguration(section, scope) {
 
 // ---- Uri ----
 class Uri {
-  constructor(fsPath) { this.fsPath = fsPath; this.scheme = 'file'; }
+  constructor(fsPath, query = '') { this.fsPath = fsPath; this.scheme = 'file'; this.query = query; }
   static file(fsPath) { return new Uri(fsPath); }
   static joinPath(base, ...parts) {
     return new Uri(path.join(base.fsPath || base, ...parts));
   }
-  toString() { return 'file://' + this.fsPath; }
-  with() { return this; }
+  toString() { return 'file://' + this.fsPath + (this.query ? '?' + this.query : ''); }
+  with(change = {}) {
+    return new Uri(change.fsPath || this.fsPath, change.query !== undefined ? change.query : this.query);
+  }
 }
 
 // ---- events ----
@@ -162,6 +164,10 @@ const windowStub = {
   showOpenDialog: async () => undefined,
   showInputBox: async () => undefined,
   get activeTextEditor() { return state.activeEditor; },
+  tabGroups: {
+    activeTabGroup: { activeTab: undefined },
+    all: [],
+  },
 };
 
 const commands = {

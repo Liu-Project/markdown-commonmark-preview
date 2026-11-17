@@ -97,6 +97,9 @@ function setActiveDoc(fileName, text) {
 }
 // expose a setter on the stub window
 stub.window.__setActiveEditor = (ed) => { state.activeEditor = ed; };
+stub.window.__setActiveTab = (input) => {
+  stub.window.tabGroups.activeTabGroup.activeTab = input ? { input } : undefined;
+};
 
 function clearMessages() { state.messages.length = 0; }
 function lastError() { return state.messages.filter((m) => m.level === 'error').map((m) => m.msg).join(' | '); }
@@ -131,11 +134,13 @@ async function main() {
     check('A8 表格/代码/引用结构保留', /<table[ >]/.test(body) && body.includes('language-python') && /<blockquote[ >]/.test(body), 'structure');
     check('A9 主题默认 light（vscode-light）', html.includes('vscode-body vscode-light'), 'light theme');
     check('A10 自包含（无外链 CDN 样式）', !/<link rel="stylesheet" href="https:/.test(html), 'no external css links');
+    check('A12 浅色主题定义代码块背景/边框/前景变量', html.includes('--vscode-textCodeBlock-background:#f2f2f2') && html.includes('--vscode-widget-border:rgba(127, 127, 127, 0.35)') && html.includes('--vscode-editor-foreground:#333333'), 'light code-block vars');
 
     // dark theme
     __setConfig('markdown-commonmark-preview', 'print.theme', 'dark');
     const { html: htmlDark } = await exportMod.buildExportHtml(doc, {});
-    check('A11 主题 dark（vscode-dark + 深色背景）', htmlDark.includes('vscode-dark') && htmlDark.includes('background-color: #1e1e1e'), 'dark theme');
+    check('A11 主题 dark（vscode-dark + 深色背景变量）', htmlDark.includes('vscode-dark') && htmlDark.includes('--vscode-editor-background:#1e1e1e'), 'dark theme');
+    check('A13 深色主题定义代码块背景/前景变量', htmlDark.includes('--vscode-textCodeBlock-background:#2d2d2d') && htmlDark.includes('--vscode-editor-foreground:#d4d4d4'), 'dark code-block vars');
     resetConfig();
   }
 
@@ -291,6 +296,44 @@ async function main() {
   }
 
   // =====================================================================
+  section('M. 预览标题栏导出按钮（自定义编辑器，无活动文本编辑器）');
+  // =====================================================================
+  {
+    resetConfig();
+    __setConfig('markdown-commonmark-preview.export', 'chromePath', CHROME);
+    const mdPath = writeDoc('m-sample.md', sampleMd);
+    const doc = makeTextDocument(mdPath, sampleMd);
+    stub.workspace.textDocuments.push(doc);
+    // The preview tab is opened with a unique query (commonmarkCustomEditors
+    // appends `commonmarkPreview=<ts>`), so the editor/title commands receive
+    // that query-suffixed URI while the preview (not a text editor) is focused.
+    const previewUri = stub.Uri.file(mdPath).with({ query: 'commonmarkPreview=12345' });
+    stub.window.__setActiveEditor(undefined);
+    // The active tab is the preview custom-editor tab (TabInputCustom-like).
+    stub.window.__setActiveTab({ uri: previewUri, viewType: 'markdown-commonmark-preview.preview' });
+
+    clearMessages();
+    await stub.commands.executeCommand('markdown-commonmark-preview.exportToHtml', previewUri);
+    check('M1 标题栏导出 HTML：使用传入的预览 URI（去除查询后缀）', fs.existsSync(mdPath.replace(/\.md$/, '.html')), 'html created');
+    check('M2 无“没有有效的 Markdown 文件”提示', !/没有有效|No valid/.test(lastError()), lastError() || 'no error');
+    fs.rmSync(mdPath.replace(/\.md$/, '.html'), { force: true });
+
+    clearMessages();
+    await stub.commands.executeCommand('markdown-commonmark-preview.exportToPdf');
+    check('M3 无 URI 时按活动标签页导出 PDF（预览聚焦场景）', fs.existsSync(mdPath.replace(/\.md$/, '.pdf')), 'pdf created');
+    check('M4 无“没有有效的 Markdown 文件”提示', !/没有有效|No valid/.test(lastError()), lastError() || 'no error');
+    fs.rmSync(mdPath.replace(/\.md$/, '.pdf'), { force: true });
+
+    stub.window.__setActiveTab(undefined);
+    clearMessages();
+    await stub.commands.executeCommand('markdown-commonmark-preview.exportToHtml');
+    check('M5 无编辑器且无标签页时仍提示无有效 Markdown 文件', /没有有效|No valid/.test(lastError()), lastError());
+    stub.window.__setActiveEditor(undefined);
+    stub.workspace.textDocuments.pop();
+    resetConfig();
+  }
+
+  // =====================================================================
   section('L. 传统 printToHtml 回归');
   // =====================================================================
   {
@@ -318,6 +361,7 @@ async function main() {
       check('L2 标题保留', html.includes('<title>导出功能验收样例</title>'), 'title');
       check('L3 图片 base64 内联', html.includes('data:image/png;base64,'), 'base64 img');
       check('L4 .md 链接转 .html', html.includes('other.html'), 'links');
+      check('L6 printToHtml 包含主题变量（代码块样式可用）', html.includes('--vscode-textCodeBlock-background:#f2f2f2'), 'theme vars');
     }
     // pureHtml mode
     __setConfig('markdown-commonmark-preview', 'print.pureHtml', true);

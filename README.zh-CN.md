@@ -78,6 +78,7 @@ VS Code 内置 Markdown 预览已经很好了，但本扩展在保持「和内�
 
 - **HTML**：默认生成**自包含** HTML（所有样式与脚本本地内联，无需联网，可离线打开），效果与预览一致；**mermaid 图在导出时由 Chrome/Edge 预渲染为内嵌 SVG，打开即显示渲染后的图**（无 Chrome/Edge 时自动回退为内联脚本、打开时渲染）；无公式 / 无 mermaid 图时自动精简体积。
 - **PDF**：使用无头 Chrome/Edge 打印，正文与预览一致；文档有标题层级时**自动生成 PDF 书签大纲**（多级目录）。未安装 Chrome/Edge 时提示配置 `markdown-commonmark-preview.export.chromePath`。
+- **代码块**：按导出主题（浅色 / 深色）渲染背景、边框与等宽字体，语法高亮跟随主题。
 
 **已知限制**：PDF 书签依赖较新的 Chrome/Edge 版本，低版本自动跳过书签、不影响正文导出。
 
@@ -182,6 +183,7 @@ code --install-extension markdown-commonmark-preview-*.vsix
 
 最新版本变更详见 [CHANGELOG.md](./CHANGELOG.md)。
 
+- **0.2.13**：两项导出修复。（1）修复导出 **HTML / PDF** 中代码块无样式的问题：独立导出的文档此前依赖仅在 VS Code 内定义的 `--vscode-*` 主题变量，代码块因此丢失背景与边框；现在导出会按所选浅色 / 深色主题定义这些变量（对齐 VS Code 默认主题），代码块恢复背景、边框、等宽字体，深色导出正文可读，语法高亮颜色正常。（2）修复预览标题栏「导出 HTML / PDF」按钮提示"没有有效的 Markdown 文件"的问题：命令现在接收预览标签页 URI（去除 `commonmarkPreview=` 查询串还原真实文件），无 URI 时（命令面板）回退到活动标签页解析 Markdown 文档。
 - **0.2.12**：新增 **Mermaid 图表预览**——` ```mermaid ` 围栏代码块与 `:::mermaid` 容器块在预览中渲染为图表（与 VS Code 内置 Markdown 预览一致），颜色跟随 VS Code 深色 / 浅色主题并随编辑实时更新。同时新增"导出"功能，可将当前 Markdown 文档导出为 **HTML / PDF**，导出效果与预览一致：**HTML** 为**自包含**文件（所有样式与脚本内联、可离线打开），**mermaid 图在导出时预渲染为内嵌 SVG**；**PDF** 通过无头 Chrome/Edge 打印，并**自动生成标题书签大纲**。入口包括命令面板、编辑器右键菜单、预览标题栏与预览右下角**导出浮动按钮**。
 - **0.2.11**：预览中的未知 / 自定义 XML 标签（如 `<Schedules>`、`<PartitionWindow/>`）改为以 Typora 风格的浅灰色文本显示（标签名与属性均可见），不再被浏览器吞掉而完全隐藏；保留原有换行与缩进，正文颜色不受影响。标准 HTML 标签（`<img>`、`<table>`、`<div>` 等）仍保持真实渲染。自定义编辑器预览与 VS Code 内置 Markdown 预览（Ctrl+K V）均生效。
 - **0.2.10**：修复预览不随编辑实时更新的问题：编辑器中修改 Markdown 后预览立即刷新（含删除列表项等场景），行为与 VS Code 内置 Markdown 预览一致。

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.13] - 2026-11-17
+
+### Fixed
+
+- 修复导出 **HTML / PDF** 中代码块无样式的问题：导出的文档是独立文件，代码块样式（`pre` 背景 / 边框、`code` 文字颜色）依赖的 `--vscode-*` 主题变量在独立文档中未定义，导致代码块显示为无背景、无边框的纯文本；深色主题下正文文字与背景同为深色、几乎不可读。现在导出 HTML 会按所选主题（浅色 / 深色）定义这些变量（取值对齐 VS Code 默认 Light+/Dark+ 主题），代码块恢复背景、边框与等宽字体样式，深色导出正文正常可读，语法高亮颜色正常。遗留的 `Print to HTML` 命令同样生效。
+- 修复预览标题栏「导出 HTML / 导出 PDF」按钮提示"没有有效的 Markdown 文件"的问题：预览为自定义编辑器（非文本编辑器），聚焦时 `activeTextEditor` 为空，且命令注册时丢弃了 VS Code 传入的（带 `commonmarkPreview=` 查询串的）标签页 URI。现在命令接收该 URI 并去除查询串还原真实文件，无 URI 时（命令面板）回退到活动标签页资源解析 Markdown 文档。
+
 ## [0.2.12] - 2026-11-11
 
 ### Added

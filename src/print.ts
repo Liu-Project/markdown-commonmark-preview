@@ -12,6 +12,7 @@ import { isMdDocument } from "./util/generic";
 import {
     convertMdLinksToHtml,
     extractDocumentTitle,
+    getExportThemeVariableStyles,
     getPreviewExtensionScripts,
     getPreviewExtensionStyles,
     getPrintStyles,
@@ -92,6 +93,7 @@ async function print(type: string, uri?: Uri, outFolder?: string) {
     const pureHtml = config.get<boolean>('print.pureHtml')!;
     const themeKind = config.get<string>('print.theme');
     const themeClass = themeKind === 'light' ? 'vscode-light' : themeKind === 'dark' ? 'vscode-dark' : '';
+    const themeVarsCss = themeClass ? getExportThemeVariableStyles(themeClass === 'vscode-dark') : '';
 
     let html = body;
     if (!pureHtml) {
@@ -100,6 +102,7 @@ async function print(type: string, uri?: Uri, outFolder?: string) {
         <head>
             <meta charset="UTF-8">
             <title>${title ? encodeHTML(title) : ''}</title>
+            ${themeVarsCss}
             ${extensionStyles}
             ${getPrintStyles(doc.uri, hasMath, includeVscodeStyles)}
         </head>

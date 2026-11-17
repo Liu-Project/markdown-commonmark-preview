@@ -31,8 +31,8 @@ export function activate(context: ExtensionContext) {
     thisContext = context;
     context.subscriptions.push(
         commands.registerCommand('markdown-commonmark-preview.export', (uri?: Uri) => exportWithPicker(uri)),
-        commands.registerCommand('markdown-commonmark-preview.exportToHtml', () => exportDocument('html')),
-        commands.registerCommand('markdown-commonmark-preview.exportToPdf', () => exportDocument('pdf'))
+        commands.registerCommand('markdown-commonmark-preview.exportToHtml', (uri?: Uri) => exportDocument('html', uri)),
+        commands.registerCommand('markdown-commonmark-preview.exportToPdf', (uri?: Uri) => exportDocument('pdf', uri))
     );
 }
 
@@ -307,6 +307,42 @@ export async function getPreviewExtensionScripts(includeMermaid: boolean = true)
 }
 
 /**
+ * Theme values for the `--vscode-*` CSS variables that VS Code normally
+ * injects into webviews. The exported HTML is a standalone document where
+ * these are undefined, which silently invalidates every rule that uses them
+ * (e.g. the code-block `background-color` / `border` in vscode-markdown.css
+ * and COMMON_CONTENT_CSS). Defining the ones the export relies on restores
+ * the code-block styling for the selected export theme (light/dark).
+ *
+ * Values follow the VS Code default Light+/Dark+ themes.
+ */
+const EXPORT_THEME_VARIABLES = {
+    light: {
+        '--vscode-editor-background': '#ffffff',
+        '--vscode-editor-foreground': '#333333',
+        '--vscode-textCodeBlock-background': '#f2f2f2',
+        '--vscode-widget-border': 'rgba(127, 127, 127, 0.35)',
+        '--vscode-editorWidget-border': 'rgba(127, 127, 127, 0.35)',
+        '--vscode-contrastBorder': 'rgba(127, 127, 127, 0.35)',
+    },
+    dark: {
+        '--vscode-editor-background': '#1e1e1e',
+        '--vscode-editor-foreground': '#d4d4d4',
+        '--vscode-textCodeBlock-background': '#2d2d2d',
+        '--vscode-widget-border': 'rgba(127, 127, 127, 0.5)',
+        '--vscode-editorWidget-border': 'rgba(127, 127, 127, 0.5)',
+        '--vscode-contrastBorder': 'rgba(127, 127, 127, 0.5)',
+    }
+} as const;
+
+/** Renders the theme-variable definitions for the given export theme. */
+export function getExportThemeVariableStyles(isDark: boolean): string {
+    const vars = isDark ? EXPORT_THEME_VARIABLES.dark : EXPORT_THEME_VARIABLES.light;
+    const entries = Object.entries(vars).map(([name, value]) => `${name}:${value};`).join('');
+    return `<style>\n:root{${entries}}\n</style>`;
+}
+
+/**
  * Styles that reproduce the custom-editor preview exactly:
  *  - KaTeX (fonts inlined so the export works offline)
  *  - vscode-highlight.css (theme-aware code highlighting, like the preview)
@@ -441,11 +477,12 @@ export async function buildExportHtml(doc: TextDocument, options: BuildExportHtm
 <title>${title ? encodeHTML(title) : ''}</title>
 <style>
 html, body { margin: 0; padding: 0; }
-body { background-color: ${isDark ? '#1e1e1e' : '#ffffff'}; }
+body { background-color: var(--vscode-editor-background, ${isDark ? '#1e1e1e' : '#ffffff'}); color: var(--vscode-editor-foreground, ${isDark ? '#d4d4d4' : '#333333'}); }
 .mermaid-rendered { margin: 0.8em 0; text-align: center; }
 .mermaid-rendered svg { max-width: 100%; height: auto; }
 ${pageCss}
 </style>
+${getExportThemeVariableStyles(isDark)}
 ${previewStyles}
 </head>
 <body class="vscode-body ${themeClass}">
@@ -780,14 +817,55 @@ function computeOutPath(doc: TextDocument, format: ExportFormat): string {
     return outPath;
 }
 
-async function exportDocument(format: ExportFormat, uri?: Uri): Promise<void> {
-    if (!uri) {
-        const editor = window.activeTextEditor;
-        if (!editor || !isMdDocument(editor?.document)) {
-            window.showErrorMessage(localize("ui.general.messageNoValidMarkdownFile"));
-            return;
+/**
+ * The preview custom editor is opened with a unique `commonmarkPreview=`
+ * query on its URI (see commonmarkCustomEditors.openWithCustomEditor) so VS
+ * Code treats every invocation as a brand-new resource. The `editor/title`
+ * export buttons therefore receive that query-suffixed URI; strip the query
+ * to get the real on-disk file (the query is meaningless for `file` scheme).
+ */
+function stripPreviewQuery(uri: Uri): Uri {
+    return uri.scheme === 'file' && uri.query ? uri.with({ query: '' }) : uri;
+}
+
+/**
+ * Resolves the markdown document to export:
+ *  1. the URI passed by the caller (title-bar buttons / picker), normalized by
+ *     stripping the preview's unique query suffix;
+ *  2. the active text editor (command-palette invocation);
+ *  3. the active tab's resource — the custom-editor preview is NOT a text
+ *     editor, so `window.activeTextEditor` is empty while it is focused and
+ *     the export commands would otherwise fail with "no valid markdown file".
+ */
+function resolveExportSourceUri(uri?: Uri): Uri | undefined {
+    if (uri) {
+        return stripPreviewQuery(uri);
+    }
+
+    const editor = window.activeTextEditor;
+    if (editor && isMdDocument(editor.document)) {
+        return editor.document.uri;
+    }
+
+    const tab = window.tabGroups?.activeTabGroup?.activeTab;
+    // `Tab.input` is a union of tab-input shapes; all editor tabs carry `.uri`,
+    // so read it defensively (the preview tab's input is a `TabInputCustom`).
+    const tabUri = tab && tab.input ? (tab.input as { uri?: Uri }).uri : undefined;
+    if (tabUri) {
+        const clean = stripPreviewQuery(tabUri);
+        const doc = workspace.textDocuments.find((d) => d.uri.with({ query: '' }).toString() === clean.toString());
+        if (doc && isMdDocument(doc)) {
+            return clean;
         }
-        uri = editor.document.uri;
+    }
+    return undefined;
+}
+
+async function exportDocument(format: ExportFormat, uri?: Uri): Promise<void> {
+    uri = resolveExportSourceUri(uri);
+    if (!uri) {
+        window.showErrorMessage(localize("ui.general.messageNoValidMarkdownFile"));
+        return;
     }
 
     const doc = await workspace.openTextDocument(uri);

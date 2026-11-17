@@ -61,14 +61,24 @@
       "detail": "no external css links"
     },
     {
-      "name": "A11 主题 dark（vscode-dark + 深色背景）",
+      "name": "A12 浅色主题定义代码块背景/边框/前景变量",
+      "pass": true,
+      "detail": "light code-block vars"
+    },
+    {
+      "name": "A11 主题 dark（vscode-dark + 深色背景变量）",
       "pass": true,
       "detail": "dark theme"
     },
     {
+      "name": "A13 深色主题定义代码块背景/前景变量",
+      "pass": true,
+      "detail": "dark code-block vars"
+    },
+    {
       "name": "B1 生成 .html 文件",
       "pass": true,
-      "detail": "/tmp/mcp-export-test-msH4BA/b-sample.html"
+      "detail": "/tmp/mcp-export-test-YFVKcT/b-sample.html"
     },
     {
       "name": "B2 HTML 默认带 styles",
@@ -78,7 +88,7 @@
     {
       "name": "B3 HTML 成功提示",
       "pass": true,
-      "detail": "已导出到 /tmp/mcp-export-test-msH4BA/b-sample.html"
+      "detail": "已导出到 /tmp/mcp-export-test-YFVKcT/b-sample.html"
     },
     {
       "name": "C0 导出 HTML 文件已含预渲染 SVG（fenced + container 共 2 个）",
@@ -138,7 +148,7 @@
     {
       "name": "D1 生成 .pdf 文件",
       "pass": true,
-      "detail": "size=339234"
+      "detail": "size=341172"
     },
     {
       "name": "D2 PDF 含书签大纲 /Outlines（标题层级）",
@@ -173,7 +183,7 @@
     {
       "name": "D8 PDF 成功提示",
       "pass": true,
-      "detail": "已导出到 /tmp/mcp-export-test-msH4BA/d-sample.pdf"
+      "detail": "已导出到 /tmp/mcp-export-test-YFVKcT/d-sample.pdf"
     },
     {
       "name": "E1 headingHierarchy=false 时 PDF 无 /Outlines",
@@ -211,9 +221,34 @@
       "detail": "没有有效的 Markdown 文件。"
     },
     {
+      "name": "M1 标题栏导出 HTML：使用传入的预览 URI（去除查询后缀）",
+      "pass": true,
+      "detail": "html created"
+    },
+    {
+      "name": "M2 无“没有有效的 Markdown 文件”提示",
+      "pass": true,
+      "detail": "no error"
+    },
+    {
+      "name": "M3 无 URI 时按活动标签页导出 PDF（预览聚焦场景）",
+      "pass": true,
+      "detail": "pdf created"
+    },
+    {
+      "name": "M4 无“没有有效的 Markdown 文件”提示",
+      "pass": true,
+      "detail": "no error"
+    },
+    {
+      "name": "M5 无编辑器且无标签页时仍提示无有效 Markdown 文件",
+      "pass": true,
+      "detail": "没有有效的 Markdown 文件。"
+    },
+    {
       "name": "L1 printToHtml 仍生成 HTML",
       "pass": true,
-      "detail": "/tmp/mcp-export-test-msH4BA/l-sample.html"
+      "detail": "/tmp/mcp-export-test-YFVKcT/l-sample.html"
     },
     {
       "name": "L2 标题保留",
@@ -231,6 +266,11 @@
       "detail": "links"
     },
     {
+      "name": "L6 printToHtml 包含主题变量（代码块样式可用）",
+      "pass": true,
+      "detail": "theme vars"
+    },
+    {
       "name": "L5 printToHtml pureHtml 模式（无 DOCTYPE 包裹）",
       "pass": true,
       "detail": "pure html"
@@ -246,7 +286,7 @@
       "detail": "pdf"
     }
   ],
-  "pass": 49,
+  "pass": 57,
   "fail": 0,
-  "work": "/tmp/mcp-export-test-msH4BA"
+  "work": "/tmp/mcp-export-test-YFVKcT"
 }
