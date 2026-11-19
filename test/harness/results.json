@@ -78,7 +78,7 @@
     {
       "name": "B1 生成 .html 文件",
       "pass": true,
-      "detail": "/tmp/mcp-export-test-YFVKcT/b-sample.html"
+      "detail": "/tmp/mcp-export-test-ckKm9D/b-sample.html"
     },
     {
       "name": "B2 HTML 默认带 styles",
@@ -88,7 +88,7 @@
     {
       "name": "B3 HTML 成功提示",
       "pass": true,
-      "detail": "已导出到 /tmp/mcp-export-test-YFVKcT/b-sample.html"
+      "detail": "已导出到 /tmp/mcp-export-test-ckKm9D/b-sample.html"
     },
     {
       "name": "C0 导出 HTML 文件已含预渲染 SVG（fenced + container 共 2 个）",
@@ -183,7 +183,7 @@
     {
       "name": "D8 PDF 成功提示",
       "pass": true,
-      "detail": "已导出到 /tmp/mcp-export-test-YFVKcT/d-sample.pdf"
+      "detail": "已导出到 /tmp/mcp-export-test-ckKm9D/d-sample.pdf"
     },
     {
       "name": "E1 headingHierarchy=false 时 PDF 无 /Outlines",
@@ -248,7 +248,7 @@
     {
       "name": "L1 printToHtml 仍生成 HTML",
       "pass": true,
-      "detail": "/tmp/mcp-export-test-YFVKcT/l-sample.html"
+      "detail": "/tmp/mcp-export-test-ckKm9D/l-sample.html"
     },
     {
       "name": "L2 标题保留",
@@ -284,9 +284,179 @@
       "name": "O1 中文路径 PDF 导出成功",
       "pass": true,
       "detail": "pdf"
+    },
+    {
+      "name": "P1 auto 不写 data-preview-theme",
+      "pass": true,
+      "detail": "no forced attribute"
+    },
+    {
+      "name": "P2 auto 首屏 body 跟随真实深色主题",
+      "pass": true,
+      "detail": "auto dark body"
+    },
+    {
+      "name": "P3 预览内主题按钮存在",
+      "pass": true,
+      "detail": "theme button"
+    },
+    {
+      "name": "P4 主题按钮初始为跟随",
+      "pass": true,
+      "detail": "auto button"
+    },
+    {
+      "name": "P5 调色板 CSS 已内置（light/dark 两套）",
+      "pass": true,
+      "detail": "palettes"
+    },
+    {
+      "name": "P6 Light+ 背景值正确",
+      "pass": true,
+      "detail": "light bg"
+    },
+    {
+      "name": "P7 Dark+ 背景值正确",
+      "pass": true,
+      "detail": "dark bg"
+    },
+    {
+      "name": "P8 目标主题未定义变量用 initial 覆盖",
+      "pass": true,
+      "detail": "initial override"
+    },
+    {
+      "name": "P9 字体变量不被主题覆盖",
+      "pass": true,
+      "detail": "fonts untouched"
+    },
+    {
+      "name": "P10 auto ready 后发送 theme=auto/dark",
+      "pass": true,
+      "detail": "{\"type\":\"theme\",\"dark\":true,\"scheme\":\"auto\"}"
+    },
+    {
+      "name": "P11 ready 后发送 render 消息",
+      "pass": true,
+      "detail": "render sent"
+    },
+    {
+      "name": "P12 light 首屏写 data-preview-theme",
+      "pass": true,
+      "detail": "light attribute"
+    },
+    {
+      "name": "P13 light 首屏 body=vscode-light",
+      "pass": true,
+      "detail": "light body"
+    },
+    {
+      "name": "P14 light 按钮标题正确",
+      "pass": true,
+      "detail": "light button"
+    },
+    {
+      "name": "P15 light 强制模式下 dark=false",
+      "pass": true,
+      "detail": "{\"type\":\"theme\",\"dark\":false,\"scheme\":\"light\"}"
+    },
+    {
+      "name": "P16 真实主题变化后仍保持 light 强制",
+      "pass": true,
+      "detail": "{\"type\":\"theme\",\"dark\":false,\"scheme\":\"light\"}"
+    },
+    {
+      "name": "P17 dark 首屏写 data-preview-theme",
+      "pass": true,
+      "detail": "dark attribute"
+    },
+    {
+      "name": "P18 dark 首屏 body=vscode-dark",
+      "pass": true,
+      "detail": "dark body"
+    },
+    {
+      "name": "P19 dark 强制模式下 dark=true",
+      "pass": true,
+      "detail": "{\"type\":\"theme\",\"dark\":true,\"scheme\":\"dark\"}"
+    },
+    {
+      "name": "P20 设置变化广播到已打开预览",
+      "pass": true,
+      "detail": "{\"type\":\"theme\",\"dark\":false,\"scheme\":\"auto\"}"
+    },
+    {
+      "name": "P21 toggle auto->light",
+      "pass": true,
+      "detail": "light"
+    },
+    {
+      "name": "P22 toggle light->dark",
+      "pass": true,
+      "detail": "dark"
+    },
+    {
+      "name": "P23 toggle dark->auto",
+      "pass": true,
+      "detail": "auto"
+    },
+    {
+      "name": "P24 切换命令已注册",
+      "pass": true,
+      "detail": "command"
+    },
+    {
+      "name": "P25 预览内按钮消息可切换设置",
+      "pass": true,
+      "detail": "light"
+    },
+    {
+      "name": "P26 未知取值回退 auto",
+      "pass": true,
+      "detail": "auto"
+    },
+    {
+      "name": "P27 auto + dark theme => dark",
+      "pass": true,
+      "detail": "auto dark"
+    },
+    {
+      "name": "P28 auto + light theme => light",
+      "pass": true,
+      "detail": "auto light"
+    },
+    {
+      "name": "P29 forced light => light",
+      "pass": true,
+      "detail": "forced light"
+    },
+    {
+      "name": "P30 forced dark => dark",
+      "pass": true,
+      "detail": "forced dark"
+    },
+    {
+      "name": "P31 workspace override -> write Workspace",
+      "pass": true,
+      "detail": "{\"section\":\"markdown-commonmark-preview\",\"key\":\"preview.colorScheme\",\"value\":\"light\",\"target\":2}"
+    },
+    {
+      "name": "P32 no workspace override -> write Global",
+      "pass": true,
+      "detail": "{\"section\":\"markdown-commonmark-preview\",\"key\":\"preview.colorScheme\",\"value\":\"light\",\"target\":1}"
+    },
+    {
+      "name": "P33 never writes WorkspaceFolder",
+      "pass": true,
+      "detail": "no folder target"
+    },
+    {
+      "name": "P34 宽表格在预览内可横向滚动",
+      "pass": true,
+      "detail": "table overflow-x"
     }
   ],
-  "pass": 57,
+  "pass": 91,
   "fail": 0,
-  "work": "/tmp/mcp-export-test-YFVKcT"
+  "work": "/tmp/mcp-export-test-ckKm9D"
 }

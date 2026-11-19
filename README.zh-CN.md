@@ -14,6 +14,7 @@
 > 如果这个扩展对你有帮助，欢迎点个 ⭐ Star，你的支持是持续维护的最大动力！
 
 - 预览为独立的 Webview 窗口，主题跟随 VS Code 深色 / 浅色自动切换，无闪烁
+- 预览可单独切换浅色 / 深色（不影响 VS Code 主题），深色主题下也能清晰查看 mermaid 图表
 - 编辑与预览双向滚动联动，定位精准、跟动流畅
 - 数学公式、mermaid 图表、代码高亮、任务列表开箱即用
 - 内置常用 Markdown 编辑命令，快捷键与主流编辑器习惯保持一致
@@ -45,7 +46,8 @@ VS Code 内置 Markdown 预览已经很好了，但本扩展在保持「和内�
 
 ### 预览
 
-- 主题完全跟随 VS Code 内置 Markdown 预览（`--vscode-*` 变量），深色 / 浅色自动切换，无闪烁。
+- 默认主题完全跟随 VS Code（`--vscode-*` 变量），深色 / 浅色自动切换，无闪烁。
+- 预览配色可单独切换：`markdown-commonmark-preview.preview.colorScheme`（`auto` / `light` / `dark`）。`light` / `dark` 会把预览强制为 VS Code 默认 Light+ / Dark+ 的效果，**不会切换 VS Code 本身的主题**；切换后预览内容（含 mermaid、代码高亮、表格、引用等）与真实切换到对应主题后一致。入口：预览标题栏配色按钮、预览右下角浮动按钮、命令面板 `Markdown: 切换预览配色`。
 - 双向滚动联动与 VS Code 内置预览完全一致：行级插值定位、代码块内逐行映射、50ms 节流连续跟动、双方向防循环抑制。
 - 滚动联动仅在预览与编辑器并排时生效（同窗口堆叠时不联动）；同一文件在多个并排窗口打开时，滚动预览会带动所有窗口一起联动。
 - 打开预览自动定位到编辑器当前行；图片加载完成后再定位，避免漂移。
@@ -151,6 +153,7 @@ code --install-extension markdown-commonmark-preview-*.vsix
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
+| `markdown-commonmark-preview.preview.colorScheme` | `auto` | 预览配色：`auto` 跟随 VS Code，`light` / `dark` 强制浅色 / 深色预览（不切换 VS Code 主题） |
 | `markdown-commonmark-preview.bold.indicator` | `**` | 加粗标记 |
 | `markdown-commonmark-preview.italic.indicator` | `*` | 斜体标记 |
 | `markdown-commonmark-preview.toc.levels` | `1..6` | 目录标题层级 |
@@ -163,6 +166,7 @@ code --install-extension markdown-commonmark-preview-*.vsix
 ## 已知限制
 
 - 预览为独立 Webview（非内置预览叠加），不参与内置 `markdown.*` 配置。
+- `preview.colorScheme` 只作用于本扩展的预览（`Ctrl+K K` / 标题栏预览图标）；VS Code 内置预览（`Ctrl+K V`）仍跟随 VS Code 真实主题。
 - 代码折叠（DETAILS）、diff 高亮、`scrollProgress` 恢复暂未实现（不影响常规使用）。
 
 ---

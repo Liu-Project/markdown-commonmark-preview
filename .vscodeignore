@@ -18,6 +18,9 @@ tsconfig.json
 tsconfig.tsbuildinfo
 上架材料/**
 .zeroagent/**
+.zero/**
+.playwright-mcp/**
+logs/**
 *.vsix
 **/*.map
 **/.DS_Store

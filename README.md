@@ -14,6 +14,7 @@
 > If this extension helps you, please give it a ⭐ on GitHub — your support keeps this project alive!
 
 - Standalone Webview preview that follows the VS Code light / dark theme with no flicker
+- Switch the preview between light / dark independently of the VS Code theme — keeps mermaid diagrams readable in dark themes
 - Two-way scroll sync between editor and preview, precise and smooth
 - Math (KaTeX), mermaid diagrams, syntax highlighting and task lists out of the box
 - Common Markdown editing commands with shortcuts matching mainstream editors
@@ -45,7 +46,8 @@ VS Code's built-in Markdown preview is already great. This extension keeps **the
 
 ### Preview
 
-- Theme follows the built-in VS Code Markdown preview (`--vscode-*` variables); light / dark auto-switch with no flicker.
+- By default the theme follows VS Code (`--vscode-*` variables); light / dark auto-switch with no flicker.
+- The preview color scheme can be switched independently: `markdown-commonmark-preview.preview.colorScheme` (`auto` / `light` / `dark`). `light` / `dark` force the preview to the VS Code default Light+ / Dark+ look **without changing the VS Code theme**; the preview content (mermaid, syntax highlighting, tables, blockquotes, ...) then matches a real switch to that theme. Entries: the preview title-bar color button, the floating button in the preview's bottom-right corner, and the command palette (`Markdown: Toggle preview color scheme`).
 - Two-way scroll sync identical to the built-in preview: line-level interpolation, per-line mapping inside code blocks, 50ms throttled continuous following, anti-loop suppression in both directions.
 - Scroll sync only kicks in when preview and editor are side-by-side (no sync when stacked); multiple side-by-side windows of the same file all follow together.
 - Opening the preview auto-jumps to the editor's current line; positioning happens after images load to avoid drift.
@@ -148,6 +150,7 @@ Where the preview opens:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| `markdown-commonmark-preview.preview.colorScheme` | `auto` | Preview color scheme: `auto` follows VS Code; `light` / `dark` force a light / dark preview without changing the VS Code theme |
 | `markdown-commonmark-preview.bold.indicator` | `**` | Bold marker |
 | `markdown-commonmark-preview.italic.indicator` | `*` | Italic marker |
 | `markdown-commonmark-preview.toc.levels` | `1..6` | TOC heading levels |
@@ -160,6 +163,7 @@ See the full list in Settings (`Ctrl+,` → search `markdown-commonmark-preview`
 ## Known limitations
 
 - The preview is a standalone Webview (not the built-in overlay) and does not participate in the built-in `markdown.*` settings.
+- `preview.colorScheme` only applies to this extension's preview (`Ctrl+K K` / the title-bar preview icon); the VS Code built-in preview (`Ctrl+K V`) still follows the real VS Code theme.
 - Code folding (DETAILS), diff highlighting and `scrollProgress` restore are not implemented yet (they do not affect normal use).
 
 ---

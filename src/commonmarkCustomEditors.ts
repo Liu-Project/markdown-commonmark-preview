@@ -16,6 +16,14 @@ const katex = require("katex");
 const hljs = require("highlight.js");
 const { installHtmlTagStyling } = require("./htmlTagStyler");
 const { extendMarkdownItWithMermaid } = require("./mermaid-markdown-it");
+import {
+  getPreviewColorScheme,
+  isEffectiveDark,
+  renderPreviewColorSchemeCss,
+  togglePreviewColorScheme
+} from "./previewColorSchemes";
+import type { PreviewColorScheme } from "./previewColorSchemes";
+import { localize } from "./nls";
 
 /**
  * Markdown-compatible renderer (CommonMark).
@@ -132,16 +140,24 @@ const COMMON_CSS = `
   body.vscode-body{padding:0;background-color:var(--vscode-editor-background);}
   #root{width:100%;height:100vh;overflow-y:auto;overflow-x:hidden;background:var(--vscode-editor-background);box-sizing:border-box;padding:1em 26px;}
   ${COMMON_CONTENT_CSS}
+  /* Wide tables scroll horizontally inside their own box (GitHub-style) so
+     narrow preview panes can reach every column, matching the built-in
+     preview where the content can be scrolled to the right. Preview-only:
+     exports keep normal document scrolling. */
+  .markdown-body table{display:block;width:max-content;max-width:100%;overflow-x:auto;}
   /* Scroll beyond the last line like the built-in preview and the editor:
      keeps a full viewport-height of blank space below the content so the last
      line can sit in the middle of the preview, matching the editor's bottom
      behaviour. */
   .markdown-body::after{content:'';display:block;height:calc(100vh - 22px);}
-  /* Floating export button in the bottom-right corner of the preview. */
-  #mcp-export-btn{position:fixed;right:18px;bottom:18px;width:36px;height:36px;padding:0;border:none;border-radius:8px;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);cursor:pointer;opacity:.1;display:flex;align-items:center;justify-content:center;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.25);}
-  #mcp-export-btn:hover{opacity:1;}
-  #mcp-export-btn:focus{outline:1px solid var(--vscode-focusBorder);}
-  #mcp-export-btn svg{width:18px;height:18px;fill:currentColor;}
+  /* Floating buttons in the bottom-right corner of the preview:
+     preview color scheme (left) and export (right). */
+  #mcp-export-btn,#mcp-theme-btn{position:fixed;bottom:18px;width:36px;height:36px;padding:0;border:none;border-radius:8px;background:var(--vscode-button-background,#0e639c);color:var(--vscode-button-foreground,#fff);cursor:pointer;opacity:.1;display:flex;align-items:center;justify-content:center;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  #mcp-export-btn{right:18px;}
+  #mcp-theme-btn{right:64px;}
+  #mcp-export-btn:hover,#mcp-theme-btn:hover{opacity:1;}
+  #mcp-export-btn:focus,#mcp-theme-btn:focus{outline:1px solid var(--vscode-focusBorder);}
+  #mcp-export-btn svg,#mcp-theme-btn svg{width:18px;height:18px;fill:currentColor;}
 `;
 
 function getNonce(): string {
@@ -229,11 +245,18 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     // The webview background/foreground colors follow the VS Code theme through
     // the --vscode-* CSS variables (like the built-in markdown preview). The
     // body gets a vscode-light/vscode-dark class to toggle border colors etc.
-    const isDark = (theme: vscode.ColorTheme) =>
-      theme.kind === vscode.ColorThemeKind.Dark || theme.kind === vscode.ColorThemeKind.HighContrast;
-
-    const applyTheme = (dark: boolean) => {
-      webview.postMessage({ type: "theme", dark });
+    //
+    // `preview.colorScheme` can force the preview to the reference Light+ /
+    // Dark+ palette without changing the real workbench theme. The webview
+    // receives both the effective darkness and the selected scheme so it can
+    // apply the palette overrides and the matching body class.
+    const applyTheme = () => {
+      const scheme = getPreviewColorScheme();
+      webview.postMessage({
+        type: "theme",
+        dark: isEffectiveDark(scheme, vscode.window.activeColorTheme),
+        scheme
+      });
     };
 
     // First-paint content: mirror the built-in Markdown preview, which embeds
@@ -244,10 +267,18 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     // async so it never blocks first paint.
     const initialHtml = renderMarkdownBody(document.getText(), resolveImageSrc);
 
-    const themeSub = vscode.window.onDidChangeActiveColorTheme((theme) => {
-      applyTheme(isDark(theme));
+    const themeSub = vscode.window.onDidChangeActiveColorTheme(() => {
+      applyTheme();
     });
-    webviewPanel.onDidDispose(() => themeSub.dispose());
+    const colorSchemeSub = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("markdown-commonmark-preview.preview.colorScheme")) {
+        applyTheme();
+      }
+    });
+    webviewPanel.onDidDispose(() => {
+      themeSub.dispose();
+      colorSchemeSub.dispose();
+    });
 
     // The preview tab is opened with a unique query string to force a new
     // window, so compare URIs ignoring the query part.
@@ -277,7 +308,19 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     };
     const initialLine = getInitialLine();
 
-    webview.html = this.getHtml(webview, cssUris, isDark(vscode.window.activeColorTheme), mermaidUri, morphdomUri, initialHtml, initialLine);
+    const initialScheme = getPreviewColorScheme();
+    const initialDark = isEffectiveDark(initialScheme, vscode.window.activeColorTheme);
+    webview.html = this.getHtml(webview, cssUris, initialDark, initialScheme, mermaidUri, morphdomUri, initialHtml, initialLine);
+
+    // Handle the floating preview-color-scheme button before the ready
+    // handshake so an early click is not lost (the main message handler is
+    // installed inside ready.then below).
+    const colorSchemeMessageSub = webview.onDidReceiveMessage((msg) => {
+      if (msg && msg.type === "toggleColorScheme") {
+        void togglePreviewColorScheme();
+      }
+    });
+    webviewPanel.onDidDispose(() => colorSchemeMessageSub.dispose());
 
     // The preview's own document (its URI carries a unique query) is a
     // separate TextDocument snapshot: VS Code loads it once when the preview
@@ -312,7 +355,7 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     };
 
     ready.then(() => {
-      applyTheme(isDark(vscode.window.activeColorTheme));
+      applyTheme();
 
       // Initial positioning on first paint is handled by the webview itself via
       // the embedded initialLine (G(settings.line) parity). The ready handshake
@@ -451,6 +494,11 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
           vscode.commands.executeCommand('markdown-commonmark-preview.export', findSourceDocument().uri);
           return;
         }
+        if (msg.type === "toggleColorScheme") {
+          // Handled by the early message listener registered next to the
+          // webview HTML (so it also works before the ready handshake).
+          return;
+        }
         if (msg.type !== "revealLine") {
           return;
         }
@@ -494,15 +542,26 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     });
   }
 
-  private getHtml(webview: vscode.Webview, css: any, initialDark: boolean, mermaidSrc: string, morphdomSrc: string, initialHtml: string, initialLine: number): string {
+  private getHtml(webview: vscode.Webview, css: any, initialDark: boolean, initialScheme: PreviewColorScheme, mermaidSrc: string, morphdomSrc: string, initialHtml: string, initialLine: number): string {
     const nonce = getNonce();
     // Built-in preview embeds the rendered content in data-initial-md-content so
     // the webview can paint text before any script round-trip. Escape attribute
     // like the built-in (util/dom.ts escapeAttribute).
     const escapeAttribute = (value: string): string =>
       value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    // Only force a reference theme when the user explicitly selected one.
+    // "auto" leaves the attribute absent, so the webview's real VS Code theme
+    // variables and body classes are used exactly as before.
+    const previewThemeAttribute = initialScheme === "auto" ? "" : ` data-preview-theme="${initialScheme}"`;
+    const themeLabels = {
+      auto: localize("ui.preview.colorScheme.auto"),
+      light: localize("ui.preview.colorScheme.light"),
+      dark: localize("ui.preview.colorScheme.dark")
+    };
+    const themeLabelsJson = JSON.stringify(themeLabels).replace(/</g, "\\u003c");
+    const themeButtonTitle = escapeAttribute(themeLabels[initialScheme] || themeLabels.auto);
     return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN"${previewThemeAttribute}>
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data: https:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
@@ -511,11 +570,15 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
 <link rel="stylesheet" href="${css.hljs}">
 <link rel="stylesheet" href="${css.markdown}">
 <style>${COMMON_CSS}</style>
+<style>${renderPreviewColorSchemeCss()}</style>
 </head>
 <body class='vscode-body ${initialDark ? "vscode-dark" : "vscode-light"}'>
 <div id="root">
 <div class="markdown-body" id="write"></div>
 </div>
+<button id="mcp-theme-btn" data-scheme="${initialScheme}" title="${themeButtonTitle}" aria-label="${themeButtonTitle}">
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2v16a8 8 0 0 1 0-16z"/></svg>
+</button>
 <button id="mcp-export-btn" title="Export Markdown CommonMark document" aria-label="Export Markdown CommonMark document">
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a1 1 0 0 1 1 1v9.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 13.6V4a1 1 0 0 1 1-1zM4 20a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1z"/></svg>
 </button>
@@ -536,6 +599,119 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     exportBtn.addEventListener('click', function () {
       vscode.postMessage({ type: 'export' });
     });
+  }
+
+  // Floating preview color-scheme button (bottom-right, left of export):
+  // cycles auto -> light -> dark through the extension host, which persists
+  // the setting and broadcasts the new effective theme to every open preview.
+  const themeBtn = document.getElementById('mcp-theme-btn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      vscode.postMessage({ type: 'toggleColorScheme' });
+    });
+  }
+
+  // ---- Preview color scheme -------------------------------------------
+  // While a scheme is forced, the preview overrides the webview's theme
+  // variables (the palette CSS is generated by the extension host) and keeps
+  // the body classes in sync even if VS Code resets them when the real
+  // workbench theme changes. In "auto" mode none of this interferes.
+  let desiredDark = null;
+  let applyingBodyTheme = false;
+  const THEME_CLASSES = ['vscode-light', 'vscode-dark', 'vscode-high-contrast', 'vscode-high-contrast-light'];
+
+  function clearThemeClasses() {
+    for (const cls of THEME_CLASSES) {
+      if (document.body.classList.contains(cls)) {
+        document.body.classList.remove(cls);
+      }
+    }
+  }
+
+  function applyBodyTheme(dark) {
+    applyingBodyTheme = true;
+    try {
+      clearThemeClasses();
+      document.body.classList.add(dark ? 'vscode-dark' : 'vscode-light');
+    } finally {
+      applyingBodyTheme = false;
+    }
+  }
+
+  // Restore the class set that the webview host applied for the real theme.
+  // The host records the real theme kind in data-vscode-theme-kind; unlike the
+  // body classes, that attribute is not overwritten by the forced preview.
+  function restoreActualBodyTheme(actualDark) {
+    applyingBodyTheme = true;
+    try {
+      clearThemeClasses();
+      const kind = document.body.dataset.vscodeThemeKind;
+      if (kind === 'vscode-high-contrast-light') {
+        document.body.classList.add('vscode-high-contrast-light', 'vscode-high-contrast');
+      } else if (kind === 'vscode-high-contrast' || kind === 'vscode-dark' || kind === 'vscode-light') {
+        document.body.classList.add(kind);
+      } else {
+        document.body.classList.add(actualDark ? 'vscode-dark' : 'vscode-light');
+      }
+    } finally {
+      applyingBodyTheme = false;
+    }
+  }
+
+  function updateThemeButton(scheme) {
+    if (!themeBtn) {
+      return;
+    }
+    const labels = ${themeLabelsJson};
+    const label = labels[scheme] || labels.auto;
+    themeBtn.title = label;
+    themeBtn.setAttribute('aria-label', label);
+    themeBtn.setAttribute('data-scheme', scheme || 'auto');
+  }
+
+  const initialRawScheme = document.documentElement.dataset.previewTheme;
+  const initialScheme = initialRawScheme === 'light' || initialRawScheme === 'dark' ? initialRawScheme : 'auto';
+  if (initialScheme === 'light' || initialScheme === 'dark') {
+    desiredDark = initialScheme === 'dark';
+    applyBodyTheme(desiredDark);
+  }
+  updateThemeButton(initialScheme);
+
+  // The webview host removes and re-adds the theme classes whenever the real
+  // workbench theme changes. In forced mode, put our class back; in auto mode,
+  // leave the host's classes untouched.
+  const bodyThemeObserver = new MutationObserver(function () {
+    if (applyingBodyTheme || desiredDark === null) {
+      return;
+    }
+    const want = desiredDark ? 'vscode-dark' : 'vscode-light';
+    const other = desiredDark ? 'vscode-light' : 'vscode-dark';
+    if (!document.body.classList.contains(want)
+        || document.body.classList.contains(other)
+        || document.body.classList.contains('vscode-high-contrast')
+        || document.body.classList.contains('vscode-high-contrast-light')) {
+      applyBodyTheme(desiredDark);
+    }
+  });
+  bodyThemeObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
+
+  function applyPreviewTheme(m) {
+    const rawScheme = m && m.scheme;
+    const scheme = rawScheme === 'light' || rawScheme === 'dark' ? rawScheme : 'auto';
+    if (scheme === 'auto') {
+      delete document.documentElement.dataset.previewTheme;
+      desiredDark = null;
+      restoreActualBodyTheme(!!m.dark);
+    } else {
+      document.documentElement.dataset.previewTheme = scheme;
+      desiredDark = !!m.dark;
+      applyBodyTheme(desiredDark);
+    }
+    updateThemeButton(scheme);
+    renderMermaid().then(function () { rebuildLineEls(); });
   }
 
   // =====================================================================
@@ -647,6 +823,16 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
   // =====================================================================
 
   function isDarkVsCodeTheme() {
+    // The forced preview scheme is authoritative: the body classes are kept in
+    // sync by applyBodyTheme, but they may briefly lag behind while the host
+    // is re-applying the real theme's classes.
+    const forced = document.documentElement.dataset.previewTheme;
+    if (forced === 'dark') {
+      return true;
+    }
+    if (forced === 'light') {
+      return false;
+    }
     return document.body.classList.contains('vscode-dark')
       || (document.body.classList.contains('vscode-high-contrast') && !document.body.classList.contains('vscode-high-contrast-light'));
   }
@@ -1139,9 +1325,7 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       });
       renderMermaid().then(() => rebuildLineEls());
     } else if (m.type === 'theme') {
-      document.body.classList.toggle('vscode-dark', m.dark);
-      document.body.classList.toggle('vscode-light', !m.dark);
-      renderMermaid().then(() => rebuildLineEls());
+      applyPreviewTheme(m);
     } else if (m.type === 'updateView') {
       afterImages(() => scrollToLine(m.line));
     }

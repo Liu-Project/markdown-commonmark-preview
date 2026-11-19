@@ -2,7 +2,7 @@
   "name": "markdown-commonmark-preview",
   "displayName": "Markdown CommonMark Preview & Editing",
   "description": "CommonMark-style Markdown preview (custom editor with built-in-preview-identical scroll sync) plus familiar Markdown editing commands. Rendering built on open-source KaTeX / mermaid / highlight.js.",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "publisher": "Liu-Hongcun",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -206,6 +206,11 @@
         "title": "Markdown: Open with CommonMark Preview"
       },
       {
+        "command": "markdown-commonmark-preview.preview.toggleColorScheme",
+        "title": "%command.preview.toggleColorScheme.title%",
+        "icon": "$(symbol-color)"
+      },
+      {
         "command": "markdown-commonmark-preview.setTheme",
         "title": "Markdown: Set CommonMark Preview Theme"
       }
@@ -383,6 +388,11 @@
         {
           "when": "editorLangId =~ /^markdown$|^rmd$|^quarto$/ && config.markdown-commonmark-preview.showActionButtons",
           "command": "markdown-commonmark-preview.checkTaskList",
+          "group": "navigation@7"
+        },
+        {
+          "when": "activeCustomEditorId == 'markdown-commonmark-preview.preview'",
+          "command": "markdown-commonmark-preview.preview.toggleColorScheme",
           "group": "navigation@7"
         },
         {
@@ -594,6 +604,22 @@
           "type": "boolean",
           "default": false,
           "description": "%config.preview.autoShowPreviewToSide.description%"
+        },
+        "markdown-commonmark-preview.preview.colorScheme": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "markdownEnumDescriptions": [
+            "%config.preview.colorScheme.enumDescriptions.auto%",
+            "%config.preview.colorScheme.enumDescriptions.light%",
+            "%config.preview.colorScheme.enumDescriptions.dark%"
+          ],
+          "default": "auto",
+          "scope": "window",
+          "markdownDescription": "%config.preview.colorScheme.description%"
         },
         "markdown-commonmark-preview.print.absoluteImgPath": {
           "type": "boolean",
