@@ -347,8 +347,8 @@ export function getExportThemeVariableStyles(isDark: boolean): string {
  *  - KaTeX (fonts inlined so the export works offline)
  *  - vscode-highlight.css (theme-aware code highlighting, like the preview)
  *  - vscode-markdown.css (VS Code markdown base styles, like the preview)
- *  - COMMON_CONTENT_CSS (the preview's content rendering rules: pre-wrap
- *    paragraphs, mermaid, HTML-tag styling, ...)
+ *  - COMMON_CONTENT_CSS (the preview's content rendering rules: soft-break
+ *    collapsing, mermaid, HTML-tag styling, ...)
  *
  * Deliberately does NOT include the `markdown.previewStyles` contributions
  * (commonmark-style.css / checkbox.css / hljs-github.min.css): those only apply

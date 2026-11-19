@@ -70,6 +70,9 @@ nls.config({ extensionContext: { extensionPath: REPO, extensionMode: 1 } });
 
 const exportMod = require(path.join(OUT, 'export'));
 const printMod = require(path.join(OUT, 'print'));
+const customEditors = require(path.join(OUT, 'commonmarkCustomEditors'));
+const previewColorSchemes = require(path.join(OUT, 'previewColorSchemes'));
+const commonmarkPreview = require(path.join(OUT, 'commonmarkPreview'));
 
 const mockContext = {
   extensionPath: REPO,
@@ -80,7 +83,7 @@ const mockContext = {
 exportMod.activate(mockContext);
 printMod.activate(mockContext);
 
-const { __setConfig, __setConfigDeep, makeTextDocument, makeEditor, state } = stub.__test;
+const { __setConfig, __setConfigDeep, __setWorkspaceConfig, __clearWorkspaceConfig, updateTargets, makeTextDocument, makeEditor, state } = stub.__test;
 
 function resetConfig() {
   __setConfigDeep('markdown-commonmark-preview', JSON.parse(JSON.stringify(stub.__test.DEFAULTS['markdown-commonmark-preview'])));
@@ -88,6 +91,8 @@ function resetConfig() {
   __setConfigDeep('markdown-commonmark-preview.export', JSON.parse(JSON.stringify(stub.__test.DEFAULTS['markdown-commonmark-preview.export'])));
   __setConfigDeep('markdown.preview', JSON.parse(JSON.stringify(stub.__test.DEFAULTS['markdown.preview'])));
   __setConfigDeep('markdown', JSON.parse(JSON.stringify(stub.__test.DEFAULTS['markdown'])));
+  __clearWorkspaceConfig();
+  updateTargets.length = 0;
 }
 
 function setActiveDoc(fileName, text) {
@@ -400,6 +405,193 @@ async function main() {
     setActiveDoc(mdPath, '# 中文标题\n\n正文。');
     await stub.commands.executeCommand('markdown-commonmark-preview.exportToPdf');
     check('O1 中文路径 PDF 导出成功', fs.existsSync(mdPath.replace(/\.md$/, '.pdf')), 'pdf');
+    resetConfig();
+  }
+
+  // =====================================================================
+  section('P. 预览配色切换（preview.colorScheme）');
+  // =====================================================================
+  {
+    resetConfig();
+    commonmarkPreview.activatePreviewContributions(mockContext);
+    customEditors.CommonMarkPreviewProvider.register(mockContext);
+    const provider = stub.__test.getCustomEditorProvider('markdown-commonmark-preview.preview');
+
+    const previewSource = [
+      '# 预览配色测试',
+      '',
+      '正文 **加粗** 与 `行内代码`。',
+      '',
+      '```mermaid',
+      'graph TD',
+      '  A[开始] --> B[结束]',
+      '```',
+      '',
+      '| 列1 | 列2 |',
+      '| --- | --- |',
+      '| a | b |',
+      ''
+    ].join('\n');
+    const previewDoc = makeTextDocument(path.join(REPO, 'test', 'samples', 'preview-color-scheme.md'), previewSource);
+
+    const makePreviewHarness = () => {
+      const messages = [];
+      const messageListeners = [];
+      const disposeListeners = [];
+      const webview = {
+        cspSource: 'vscode-webview://test',
+        asWebviewUri: (uri) => ({
+          toString: () => 'vscode-webview://test/' + encodeURIComponent(uri && uri.fsPath ? uri.fsPath : String(uri))
+        }),
+        onDidReceiveMessage: (fn) => {
+          messageListeners.push(fn);
+          return { dispose: () => { const i = messageListeners.indexOf(fn); if (i >= 0) messageListeners.splice(i, 1); } };
+        },
+        postMessage: async (msg) => { messages.push(msg); return true; },
+        set html(value) { this._html = value; },
+        get html() { return this._html; }
+      };
+      const panel = {
+        webview,
+        viewColumn: 1,
+        iconPath: undefined,
+        onDidDispose: (fn) => {
+          disposeListeners.push(fn);
+          return { dispose: () => { const i = disposeListeners.indexOf(fn); if (i >= 0) disposeListeners.splice(i, 1); } };
+        }
+      };
+      return { webview, panel, messages, messageListeners, disposeListeners };
+    };
+
+    const openPreview = async () => {
+      const h = makePreviewHarness();
+      await provider.resolveCustomTextEditor(previewDoc, h.panel, { isCancellationRequested: false });
+      return h;
+    };
+    const sendReady = async (h) => {
+      h.messageListeners.slice().forEach((fn) => fn({ type: 'ready' }));
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+    };
+    const lastThemeMessage = (h) => h.messages.filter((m) => m.type === 'theme').pop();
+
+    // --- auto (default) ---
+    stub.__test.state.activeColorTheme = { kind: stub.ColorThemeKind.Dark };
+    let h = await openPreview();
+    let html = h.webview.html;
+    check('P1 auto 不写 data-preview-theme', !/<html[^>]*data-preview-theme=/.test(html), 'no forced attribute');
+    check('P2 auto 首屏 body 跟随真实深色主题', html.includes("class='vscode-body vscode-dark'"), 'auto dark body');
+    check('P3 预览内主题按钮存在', html.includes('id="mcp-theme-btn"'), 'theme button');
+    check('P4 主题按钮初始为跟随', html.includes('data-scheme="auto"') && html.includes('预览配色：跟随'), 'auto button');
+    check('P5 调色板 CSS 已内置（light/dark 两套）', html.includes('html[data-preview-theme="light"]') && html.includes('html[data-preview-theme="dark"]'), 'palettes');
+    check('P6 Light+ 背景值正确', html.includes('--vscode-editor-background:#ffffff !important;'), 'light bg');
+    check('P7 Dark+ 背景值正确', html.includes('--vscode-editor-background:#1e1e1e !important;'), 'dark bg');
+    check('P8 目标主题未定义变量用 initial 覆盖', html.includes('--vscode-contrastBorder:initial !important;'), 'initial override');
+    check('P9 字体变量不被主题覆盖', !html.includes('--vscode-font-family:') && !html.includes('--vscode-editor-font-family:'), 'fonts untouched');
+    await sendReady(h);
+    let tm = lastThemeMessage(h);
+    check('P10 auto ready 后发送 theme=auto/dark', tm && tm.scheme === 'auto' && tm.dark === true, JSON.stringify(tm));
+    check('P11 ready 后发送 render 消息', h.messages.some((m) => m.type === 'render'), 'render sent');
+
+    // --- light forced while the real theme is dark ---
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'light');
+    h = await openPreview();
+    html = h.webview.html;
+    check('P12 light 首屏写 data-preview-theme', html.includes('data-preview-theme="light"'), 'light attribute');
+    check('P13 light 首屏 body=vscode-light', html.includes("class='vscode-body vscode-light'"), 'light body');
+    check('P14 light 按钮标题正确', html.includes('预览配色：浅色'), 'light button');
+    await sendReady(h);
+    tm = lastThemeMessage(h);
+    check('P15 light 强制模式下 dark=false', tm && tm.scheme === 'light' && tm.dark === false, JSON.stringify(tm));
+    // A real theme change must not override the forced light preview.
+    stub.__test.fireActiveColorThemeChange(stub.ColorThemeKind.Light);
+    await new Promise((r) => setTimeout(r, 0));
+    tm = lastThemeMessage(h);
+    check('P16 真实主题变化后仍保持 light 强制', tm && tm.scheme === 'light' && tm.dark === false, JSON.stringify(tm));
+
+    // --- dark forced while the real theme is light ---
+    stub.__test.state.activeColorTheme = { kind: stub.ColorThemeKind.Light };
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'dark');
+    h = await openPreview();
+    html = h.webview.html;
+    check('P17 dark 首屏写 data-preview-theme', html.includes('data-preview-theme="dark"'), 'dark attribute');
+    check('P18 dark 首屏 body=vscode-dark', html.includes("class='vscode-body vscode-dark'"), 'dark body');
+    await sendReady(h);
+    tm = lastThemeMessage(h);
+    check('P19 dark 强制模式下 dark=true', tm && tm.scheme === 'dark' && tm.dark === true, JSON.stringify(tm));
+
+    // --- config change broadcast to an open preview ---
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    stub.__test.fireConfigurationChange(['markdown-commonmark-preview.preview.colorScheme']);
+    await new Promise((r) => setTimeout(r, 0));
+    tm = lastThemeMessage(h);
+    check('P20 设置变化广播到已打开预览', tm && tm.scheme === 'auto' && tm.dark === false, JSON.stringify(tm));
+
+    // --- toggle helper cycles and persists ---
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    await previewColorSchemes.togglePreviewColorScheme();
+    check('P21 toggle auto->light', previewColorSchemes.getPreviewColorScheme() === 'light', previewColorSchemes.getPreviewColorScheme());
+    await previewColorSchemes.togglePreviewColorScheme();
+    check('P22 toggle light->dark', previewColorSchemes.getPreviewColorScheme() === 'dark', previewColorSchemes.getPreviewColorScheme());
+    await previewColorSchemes.togglePreviewColorScheme();
+    check('P23 toggle dark->auto', previewColorSchemes.getPreviewColorScheme() === 'auto', previewColorSchemes.getPreviewColorScheme());
+
+    // --- command registration + webview toggle message ---
+    check('P24 切换命令已注册', typeof stub.__test.state.commands['markdown-commonmark-preview.preview.toggleColorScheme'] === 'function', 'command');
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    h.messageListeners.slice().forEach((fn) => fn({ type: 'toggleColorScheme' }));
+    await new Promise((r) => setTimeout(r, 0));
+    check('P25 预览内按钮消息可切换设置', previewColorSchemes.getPreviewColorScheme() === 'light', previewColorSchemes.getPreviewColorScheme());
+
+    // --- unknown setting falls back to auto ---
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'bogus');
+    check('P26 未知取值回退 auto', previewColorSchemes.getPreviewColorScheme() === 'auto', previewColorSchemes.getPreviewColorScheme());
+
+    // --- effective darkness resolution ---
+    check('P27 auto + dark theme => dark', previewColorSchemes.isEffectiveDark('auto', { kind: stub.ColorThemeKind.Dark }) === true, 'auto dark');
+    check('P28 auto + light theme => light', previewColorSchemes.isEffectiveDark('auto', { kind: stub.ColorThemeKind.Light }) === false, 'auto light');
+    check('P29 forced light => light', previewColorSchemes.isEffectiveDark('light', { kind: stub.ColorThemeKind.Dark }) === false, 'forced light');
+    check('P30 forced dark => dark', previewColorSchemes.isEffectiveDark('dark', { kind: stub.ColorThemeKind.Light }) === true, 'forced dark');
+
+    // --- persistence scope (window-scoped: Workspace / Global only) ---
+    __clearWorkspaceConfig();
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    __setWorkspaceConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    updateTargets.length = 0;
+    await previewColorSchemes.togglePreviewColorScheme();
+    check(
+      'P31 workspace override -> write Workspace',
+      previewColorSchemes.getPreviewColorScheme() === 'light'
+        && updateTargets.length > 0
+        && updateTargets[updateTargets.length - 1].target === stub.ConfigurationTarget.Workspace,
+      JSON.stringify(updateTargets[updateTargets.length - 1])
+    );
+    __clearWorkspaceConfig();
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    await previewColorSchemes.togglePreviewColorScheme();
+    check(
+      'P32 no workspace override -> write Global',
+      previewColorSchemes.getPreviewColorScheme() === 'light'
+        && updateTargets.length > 1
+        && updateTargets[updateTargets.length - 1].target === stub.ConfigurationTarget.Global,
+      JSON.stringify(updateTargets[updateTargets.length - 1])
+    );
+    check(
+      'P33 never writes WorkspaceFolder',
+      updateTargets.every((entry) => entry.target !== stub.ConfigurationTarget.WorkspaceFolder),
+      'no folder target'
+    );
+
+    // --- wide tables: horizontal scrolling inside the preview ---
+    __setConfig('markdown-commonmark-preview', 'preview.colorScheme', 'auto');
+    h = await openPreview();
+    html = h.webview.html;
+    check(
+      'P34 宽表格在预览内可横向滚动',
+      /\.markdown-body table\{display:block;width:max-content;max-width:100%;overflow-x:auto;\}/.test(html),
+      'table overflow-x'
+    );
+
     resetConfig();
   }
 

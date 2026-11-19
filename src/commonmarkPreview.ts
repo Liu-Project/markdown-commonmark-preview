@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { togglePreviewColorScheme } from "./previewColorSchemes";
 
 /**
  * Runtime preview contributions.
@@ -12,6 +13,12 @@ import * as vscode from "vscode";
  */
 export function activatePreviewContributions(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
+        // Preview-only light/dark switch. This never changes the real VS Code
+        // theme; it only changes the colors used by the Markdown preview.
+        vscode.commands.registerCommand(
+            "markdown-commonmark-preview.preview.toggleColorScheme",
+            togglePreviewColorScheme
+        ),
         vscode.commands.registerCommand("markdown-commonmark-preview.setTheme", async () => {
             const current = vscode.workspace.getConfiguration("markdown-commonmark-preview").get<string>("theme", "github");
             const themes = ["github"];

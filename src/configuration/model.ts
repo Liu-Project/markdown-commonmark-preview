@@ -32,6 +32,7 @@ export interface IConfigurationKeyTypeMap {
     "orderedList.marker": "one" | "ordered";
 
     "preview.autoShowPreviewToSide": boolean;
+    "preview.colorScheme": "auto" | "light" | "dark";
 
     "print.absoluteImgPath": boolean;
     "print.imgToBase64": boolean;

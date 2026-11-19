@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.14] - 2026-11-19
+
+### Added
+
+- 新增 **预览配色切换**：设置项 `markdown-commonmark-preview.preview.colorScheme`（`auto` / `light` / `dark`），可让 Markdown 预览单独使用浅色或深色，**不切换 VS Code 本身的主题**。`light` / `dark` 分别对齐 VS Code 默认 **Light+ / Dark+** 的完整主题变量与 `vscode-light` / `vscode-dark` 类，因此预览内容（正文、代码块与语法高亮、表格、引用、链接、滚动条、查找高亮、KaTeX、Mermaid 图表等）与真实切换到对应主题后的预览一致；`auto` 保持原有的跟随 VS Code 主题行为。
+- 新增入口：命令面板 `Markdown: 切换预览配色`、预览标题栏配色按钮、预览右下角浮动配色按钮（循环 `auto → light → dark`）。设置会持久化，并同步到所有已打开的预览；真实 VS Code 主题变化时，强制模式不会被覆盖。
+- 新增自动化测试：覆盖设置解析 / 循环、`auto` 与强制模式的首屏 HTML、调色板变量、设置变化广播、真实主题变化、预览内按钮消息、持久化作用域等 34 项检查；同时用真实 CSS 与模拟 VS Code 主题变量验证了变量覆盖、body 类切换、宿主重置恢复和 Mermaid 重新配色。
+
+### Fixed
+
+- 修复宽表格在预览中被裁剪、无法向右滚动的问题：表格改为在自身区域内横向滚动（与 VS Code 内置预览一致），窄预览窗格下也能查看全部列；该行为仅作用于预览，HTML/PDF 导出不受影响。
+
+### Notes
+
+- 预览配色只作用于本扩展的预览（`Ctrl+K K` / 标题栏预览图标）；VS Code 内置预览（`Ctrl+K V`）仍跟随真实主题。
+- 调色板取自 VS Code 1.138.0 的默认 Light+ / Dark+；升级 VS Code 后可重新生成快照。
+
 ## [0.2.13] - 2026-11-17
 
 ### Fixed

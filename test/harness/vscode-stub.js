@@ -8,6 +8,7 @@ const REPO_ROOT = path.join(__dirname, '..', '..');
 // ---- configuration store (mirrors package.json defaults) ----
 const DEFAULTS = {
   'markdown-commonmark-preview': {
+    'preview.colorScheme': 'auto',
     'print.imgToBase64': false,
     'print.absoluteImgPath': true,
     'print.includeVscodeStylesheets': true,
@@ -48,6 +49,8 @@ const DEFAULTS = {
 };
 
 const configStore = JSON.parse(JSON.stringify(DEFAULTS));
+const workspaceConfigStore = {};
+const updateTargets = [];
 
 function __setConfig(section, key, value) {
   if (!configStore[section]) configStore[section] = {};
@@ -56,10 +59,19 @@ function __setConfig(section, key, value) {
 function __setConfigDeep(section, value) {
   configStore[section] = JSON.parse(JSON.stringify(value));
 }
+function __setWorkspaceConfig(section, key, value) {
+  if (!workspaceConfigStore[section]) workspaceConfigStore[section] = {};
+  workspaceConfigStore[section][key] = value;
+}
+function __clearWorkspaceConfig() {
+  for (const key of Object.keys(workspaceConfigStore)) delete workspaceConfigStore[key];
+}
 
 function makeConfiguration(section, scope) {
   const obj = {};
   obj.get = (key, def) => {
+    const w = workspaceConfigStore[section] || {};
+    if (key in w) return w[key];
     const s = configStore[section] || {};
     if (key in s) return s[key];
     // fall back to the unscoped commonmark section for dotted keys
@@ -67,6 +79,28 @@ function makeConfiguration(section, scope) {
       return undefined;
     }
     return def;
+  };
+  obj.update = async (key, value, target) => {
+    updateTargets.push({ section, key, value, target });
+    // VS Code rejects WorkspaceFolder writes for window-scoped settings.
+    if (target === 3) {
+      throw new Error('Unable to write to Folder Settings because the setting does not support the folder resource scope.');
+    }
+    const dest = target === 2 ? workspaceConfigStore : configStore;
+    if (!dest[section]) dest[section] = {};
+    dest[section][key] = value;
+  };
+  obj.inspect = (key) => {
+    const w = workspaceConfigStore[section] || {};
+    const s = configStore[section] || {};
+    return {
+      key,
+      defaultValue: undefined,
+      globalValue: s[key],
+      workspaceValue: w[key],
+      workspaceFolderValue: undefined,
+      languageValue: undefined
+    };
   };
   // property access (e.g. config['styles'], config['preview'])
   Object.defineProperty(obj, 'style', { enumerable: false, get: () => undefined });
@@ -134,15 +168,20 @@ const markdownContribution = {
 // ---- window/workspace/commands state ----
 const state = {
   activeEditor: undefined,
+  activeColorTheme: { kind: 2 /* Dark */ },
   messages: [],
   statusBar: { text: '', disposed: false, dispose() { this.disposed = true; } },
   commands: {},
 };
 
+const configurationEmitter = makeEmitter();
+const activeColorThemeEmitter = makeEmitter();
+const customEditorProviders = new Map();
+
 const workspace = {
   getConfiguration: (section, scope) => makeConfiguration(section || '', scope),
   onDidCloseTextDocument: () => ({ dispose() { } }),
-  onDidChangeConfiguration: () => ({ dispose() { } }),
+  onDidChangeConfiguration: configurationEmitter.event,
   onDidSaveTextDocument: () => ({ dispose() { } }),
   onDidChangeTextDocument: () => ({ dispose() { } }),
   getWorkspaceFolder: () => undefined,
@@ -152,6 +191,7 @@ const workspace = {
     return makeTextDocument(fsPath, text);
   },
   textDocuments: [],
+  workspaceFolders: [],
   findFiles: async () => [],
 };
 
@@ -164,6 +204,14 @@ const windowStub = {
   showOpenDialog: async () => undefined,
   showInputBox: async () => undefined,
   get activeTextEditor() { return state.activeEditor; },
+  get activeColorTheme() { return state.activeColorTheme; },
+  get visibleTextEditors() { return state.activeEditor ? [state.activeEditor] : []; },
+  onDidChangeActiveColorTheme: activeColorThemeEmitter.event,
+  onDidChangeTextEditorVisibleRanges: () => ({ dispose() { } }),
+  registerCustomEditorProvider: (viewType, provider) => {
+    customEditorProviders.set(viewType, provider);
+    return { dispose() { customEditorProviders.delete(viewType); } };
+  },
   tabGroups: {
     activeTabGroup: { activeTab: undefined },
     all: [],
@@ -200,9 +248,18 @@ function makeEditor(doc) {
 
 module.exports = {
   ExtensionMode: { Production: 1, Development: 2, Test: 3 },
-  ColorThemeKind: { Light: 1, Dark: 2, HighContrast: 3 },
+  ColorThemeKind: { Light: 1, Dark: 2, HighContrast: 3, HighContrastLight: 4 },
+  ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
   EventEmitter: makeEmitter,
   Uri,
+  Range: class Range {
+    constructor(startLine, startChar, endLine, endChar) {
+      this.start = { line: startLine, character: startChar };
+      this.end = { line: endLine, character: endChar };
+    }
+  },
+  ViewColumn: { Active: -1, Beside: -2, One: 1, Two: 2, Three: 3 },
+  TextEditorRevealType: { InCenterIfOutsideViewport: 0, AtTop: 1 },
   workspace,
   window: windowStub,
   commands,
@@ -212,5 +269,27 @@ module.exports = {
   },
   Disposable: { from: (...d) => ({ dispose: () => d.forEach((x) => x && x.dispose()) }) },
   // test helpers
-  __test: { state, configStore, DEFAULTS, __setConfig, __setConfigDeep, makeTextDocument, makeEditor, Uri },
+  __test: {
+    state,
+    configStore,
+    workspaceConfigStore,
+    updateTargets,
+    DEFAULTS,
+    __setConfig,
+    __setConfigDeep,
+    __setWorkspaceConfig,
+    __clearWorkspaceConfig,
+    makeTextDocument,
+    makeEditor,
+    Uri,
+    getCustomEditorProvider: (viewType) => customEditorProviders.get(viewType),
+    fireConfigurationChange: (affectedSections) => {
+      const set = new Set(affectedSections || []);
+      configurationEmitter.fire({ affectsConfiguration: (section) => set.has(section) });
+    },
+    fireActiveColorThemeChange: (kind) => {
+      state.activeColorTheme = { kind };
+      activeColorThemeEmitter.fire(state.activeColorTheme);
+    },
+  },
 };

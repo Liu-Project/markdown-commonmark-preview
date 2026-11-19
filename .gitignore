@@ -6,4 +6,6 @@ dist/
 .DS_Store
 上架材料/
 .zeroagent/
+.playwright-mcp/
+logs/
 tsconfig.tsbuildinfo
