@@ -29,7 +29,7 @@ VS Code 内置 Markdown 预览已经很好了，但本扩展在保持「和内�
 |------|:------:|:----------------:|------|
 | 双向滚动联动 | ✅ | ✅ | 行级插值定位、代码块内逐行映射，手感一致 |
 | 数学公式 KaTeX | ✅ | ⚠️ 需另装插件 | `$...$` / `$$...$$` 开箱即用 |
-| mermaid 图表 | ✅ | ⚠️ 需另装插件 | flowchart / sequence / gantt / class / state / pie / er / journey / gitGraph / mindmap / timeline |
+| mermaid 图表 | ✅ | ⚠️ 需另装插件 | flowchart / sequence / class / state / er / journey / gantt / pie / quadrantChart / requirement / gitGraph / C4 / mindmap / timeline / sankey / xychart / radar / treemap / packet / kanban / architecture / block |
 | 代码高亮 | ✅ | ✅ | 跟随主题（highlight.js） |
 | 任务列表 | ✅ | ✅ | 可勾选 |
 | 预览内搜索 | ✅ | ✅ | `Ctrl+F` 查找控件 |
@@ -87,7 +87,7 @@ VS Code 内置 Markdown 预览已经很好了，但本扩展在保持「和内�
 ### 渲染能力
 
 - 数学公式（KaTeX，`markdown-it-texmath`）
-- 图表（mermaid：flowchart / sequence / gantt / class / state / pie / er / journey / gitGraph / mindmap / timeline）
+- 图表（mermaid：flowchart / sequence / class / state / er / journey / gantt / pie / quadrantChart / requirement / gitGraph / C4 / mindmap / timeline / sankey / xychart / radar / treemap / packet / kanban / architecture / block；支持围栏代码块内缩进，源码已做 NBSP 安全处理）
 - 代码高亮（highlight.js，跟随主题）
 - 任务列表（`markdown-it-task-lists`）
 
@@ -187,6 +187,7 @@ code --install-extension markdown-commonmark-preview-*.vsix
 
 最新版本变更详见 [CHANGELOG.md](./CHANGELOG.md)。
 
+- **0.2.14**：预览配色可单独切换（`auto` / `light` / `dark`），不改变 VS Code 主题；入口包括预览标题栏、右下角浮动按钮和命令面板。同时修复部分 Mermaid 图表无法渲染的问题：带缩进的围栏代码块不再被写入 NBSP，Mermaid 源码入口兜底还原 NBSP，渲染保持逐图并行（与内置预览一致）并在失败后允许重试，每图只解析一次，`architecture-beta` 示例改用英文分组标题。`a.md` 中的 26 个图现在全部可渲染。
 - **0.2.13**：两项导出修复。（1）修复导出 **HTML / PDF** 中代码块无样式的问题：独立导出的文档此前依赖仅在 VS Code 内定义的 `--vscode-*` 主题变量，代码块因此丢失背景与边框；现在导出会按所选浅色 / 深色主题定义这些变量（对齐 VS Code 默认主题），代码块恢复背景、边框、等宽字体，深色导出正文可读，语法高亮颜色正常。（2）修复预览标题栏「导出 HTML / PDF」按钮提示"没有有效的 Markdown 文件"的问题：命令现在接收预览标签页 URI（去除 `commonmarkPreview=` 查询串还原真实文件），无 URI 时（命令面板）回退到活动标签页解析 Markdown 文档。
 - **0.2.12**：新增 **Mermaid 图表预览**——` ```mermaid ` 围栏代码块与 `:::mermaid` 容器块在预览中渲染为图表（与 VS Code 内置 Markdown 预览一致），颜色跟随 VS Code 深色 / 浅色主题并随编辑实时更新。同时新增"导出"功能，可将当前 Markdown 文档导出为 **HTML / PDF**，导出效果与预览一致：**HTML** 为**自包含**文件（所有样式与脚本内联、可离线打开），**mermaid 图在导出时预渲染为内嵌 SVG**；**PDF** 通过无头 Chrome/Edge 打印，并**自动生成标题书签大纲**。入口包括命令面板、编辑器右键菜单、预览标题栏与预览右下角**导出浮动按钮**。
 - **0.2.11**：预览中的未知 / 自定义 XML 标签（如 `<Schedules>`、`<PartitionWindow/>`）改为以 Typora 风格的浅灰色文本显示（标签名与属性均可见），不再被浏览器吞掉而完全隐藏；保留原有换行与缩进，正文颜色不受影响。标准 HTML 标签（`<img>`、`<table>`、`<div>` 等）仍保持真实渲染。自定义编辑器预览与 VS Code 内置 Markdown 预览（Ctrl+K V）均生效。

@@ -29,7 +29,7 @@ VS Code's built-in Markdown preview is already great. This extension keeps **the
 |------------|:--------------:|:----------------:|-------|
 | Two-way scroll sync | ✅ | ✅ | Line-level interpolation, per-line mapping inside code blocks |
 | KaTeX math | ✅ | ⚠️ needs plugin | `$...$` / `$$...$$` out of the box |
-| mermaid diagrams | ✅ | ⚠️ needs plugin | flowchart / sequence / gantt / class / state / pie / er / journey / gitGraph / mindmap / timeline |
+| mermaid diagrams | ✅ | ⚠️ needs plugin | flowchart / sequence / class / state / er / journey / gantt / pie / quadrantChart / requirement / gitGraph / C4 / mindmap / timeline / sankey / xychart / radar / treemap / packet / kanban / architecture / block |
 | Syntax highlighting | ✅ | ✅ | highlight.js, follows theme |
 | Task lists | ✅ | ✅ | Checkable |
 | Preview search | ✅ | ✅ | `Ctrl+F` find widget |
@@ -86,7 +86,7 @@ The exported result matches the preview. Run `Export Markdown CommonMark documen
 ### Rendering capabilities
 
 - Math (KaTeX via `markdown-it-texmath`)
-- Diagrams (mermaid: flowchart / sequence / gantt / class / state / pie / er / journey / gitGraph / mindmap / timeline)
+- Diagrams (mermaid: flowchart / sequence / class / state / er / journey / gantt / pie / quadrantChart / requirement / gitGraph / C4 / mindmap / timeline / sankey / xychart / radar / treemap / packet / kanban / architecture / block; indented fenced blocks are supported, NBSP-safe)
 - Syntax highlighting (highlight.js, follows theme)
 - Task lists (`markdown-it-task-lists`)
 
@@ -184,6 +184,7 @@ If you like this project:
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full changelog.
 
+- **0.2.14**: The preview color scheme can be switched independently (`auto` / `light` / `dark`) without changing the VS Code theme, via the preview title bar, the floating button, or the command palette. Also fixes Mermaid rendering for `pie`, `quadrantChart`, `gitGraph`, `sankey-beta`, `radar-beta`, `treemap-beta`, `packet-beta` and `architecture-beta`: indented fenced code blocks no longer receive NBSP indentation, Mermaid sources are NBSP-safe, diagrams still render in parallel (same as the built-in preview) with retry on failure, each diagram is parsed only once, and the `architecture-beta` example uses an English group title. All 26 diagrams in `a.md` now render.
 - **0.2.13**: Two export fixes. (1) Exported **HTML / PDF** code blocks now keep their styling (background, border, monospace font) and dark-theme exports are readable again — the standalone export previously relied on `--vscode-*` theme variables that are only defined inside VS Code, so code blocks lost their background/border. The export now defines these variables for the selected light/dark theme (aligned with the VS Code default themes). (2) The **Export to HTML / PDF** buttons in the preview title bar no longer fail with "No valid Markdown file" — the commands now accept the preview tab's URI (stripping its `commonmarkPreview=` query) and fall back to the active tab when invoked from the command palette.
 - **0.2.12**: New **Mermaid diagram preview** — `` ```mermaid `` fenced blocks and `:::mermaid` containers now render as diagrams in the preview (identical to the VS Code built-in Markdown preview), with colors following the active VS Code theme and live updates while editing. Plus a new **export** feature — export the current Markdown document to **HTML / PDF** with output identical to the preview. HTML produces a **self-contained** file (all styles/scripts inlined, works offline) with **mermaid diagrams pre-rendered to inline SVGs**; PDF is printed via headless Chrome/Edge and automatically generates a **heading bookmark outline**. Entries include the command palette, the editor context menu, the preview title bar and the floating export button in the bottom-right corner of the preview.
 - **0.2.11**: Unknown/custom XML tags in the preview (e.g. `<Schedules>`, `<PartitionWindow/>`) are now shown as low-contrast grey text (Typora-style), keeping tag name and attributes visible instead of being swallowed by the browser; line breaks and indentation are preserved and normal text is unaffected. Standard HTML tags (`<img>`, `<table>`, `<div>`, ...) still render for real. Applies to both the custom-editor preview and the built-in Markdown preview (Ctrl+K V).

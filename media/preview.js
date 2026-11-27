@@ -172,29 +172,41 @@
     const themeChanged = fingerprint !== lastThemeFingerprint;
     lastThemeFingerprint = fingerprint;
 
-    mermaid.initialize({ startOnLoad: false, theme: "base", themeVariables });
+    // Only re-initialize mermaid when the theme actually changed: initialize()
+    // is expensive and would otherwise run on every render message.
+    if (themeChanged) {
+      mermaid.initialize({ startOnLoad: false, theme: "base", themeVariables });
+    }
 
     const scope = root || document;
     const tasks = [];
-    const usedIds = new Set();
 
     const renderOne = (container) => {
       const source = (container.textContent || "").trim();
       if (!source) {
         return;
       }
-      container.dataset.source = source;
-      let id = "mermaid-" + (mermaidSeq++);
-      while (usedIds.has(id)) {
-        id = "mermaid-" + (mermaidSeq++);
+      if (container.dataset.source === source && container.querySelector("svg")) {
+        return;
       }
-      usedIds.add(id);
-      tasks.push(mermaid.parse(source).then(() => mermaid.render(id, source)).then(({ svg }) => {
-        container.innerHTML = svg;
+      container.dataset.source = source;
+      container.dataset.rendered = "true";
+      const id = "mermaid-" + (mermaidSeq++);
+      // render() parses internally, so an extra parse() would just double the
+      // parsing work for every diagram (the built-in pays that cost).
+      tasks.push(mermaid.render(id, source).then((result) => {
+        container.innerHTML = result.svg;
+        // Bind click/tooltip handlers like the built-in renderer does.
+        if (typeof result.bindFunctions === "function") {
+          result.bindFunctions(container);
+        }
       }).catch((error) => {
+        // Allow the next render message to retry this diagram.
+        container.dataset.rendered = "false";
         const pre = document.createElement("pre");
         pre.className = "mermaid-error";
-        pre.innerText = getMermaidErrorMessage(error);
+        const message = getMermaidErrorMessage(error);
+        pre.textContent = message.length > 2000 ? message.slice(0, 2000) + "\n..." : message;
         container.innerHTML = "";
         container.appendChild(pre);
       }));
@@ -204,16 +216,17 @@
     // VS Code theme (sources are still in dataset.source after first render).
     if (themeChanged) {
       scope.querySelectorAll(".mermaid[data-rendered=\"true\"]").forEach((el) => {
+        el.innerHTML = "";
         if (el.dataset.source) {
           el.textContent = el.dataset.source;
         }
         el.dataset.rendered = "false";
-        el.innerHTML = "";
       });
     }
 
+    // Keep the original parallel rendering: serializing all diagrams made the
+    // first paint noticeably slower for documents with many diagrams.
     scope.querySelectorAll(".mermaid:not([data-rendered=\"true\"])").forEach((container) => {
-      container.dataset.rendered = "true";
       renderOne(container);
     });
 

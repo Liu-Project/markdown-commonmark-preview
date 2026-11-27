@@ -141,6 +141,7 @@ export function extendMarkdownItWithMermaid(md: MarkdownIt): MarkdownIt {
 
 function preProcess(source: string): string {
 	return source
+		.replace(/\u00A0/g, " ")
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")

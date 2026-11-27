@@ -39,8 +39,26 @@ import { localize } from "./nls";
  * rendering, so they survive parsing and display exactly like the reference.
  */
 function protectIndent(text: string): string {
-  return text.split("\n").map((line, i) => {
+  const lines = text.split("\n");
+  let fence: { char: string; len: number } | null = null;
+  return lines.map((line, i) => {
     if (i === 0) return line;
+
+    // Fenced code blocks must keep their original spaces. Mermaid (and other
+    // language lexers) reject the non-breaking spaces used for paragraph
+    // indentation, so replacing the indentation inside a fence breaks diagrams.
+    const fenceMatch = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (fence) {
+      if (fenceMatch && fenceMatch[1][0] === fence.char && fenceMatch[1].length >= fence.len) {
+        fence = null;
+      }
+      return line;
+    }
+    if (fenceMatch) {
+      fence = { char: fenceMatch[1][0], len: fenceMatch[1].length };
+      return line;
+    }
+
     const m = line.match(/^ */);
     if (m && m[0].length > 0) {
       return "\u00A0".repeat(m[0].length) + line.slice(m[0].length);
@@ -981,8 +999,6 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     }
 
     const tasks = [];
-    const usedIds = new Set();
-
     const renderOne = (container) => {
       const source = (container.textContent || '').trim();
       if (!source) {
@@ -997,17 +1013,23 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
         return;
       }
       container.dataset.source = source;
-      let id = 'mermaid-' + (mermaidSeq++);
-      while (usedIds.has(id)) {
-        id = 'mermaid-' + (mermaidSeq++);
-      }
-      usedIds.add(id);
-      tasks.push(mermaid.parse(source).then(() => mermaid.render(id, source)).then(({ svg }) => {
-        container.innerHTML = svg;
+      container.dataset.rendered = 'true';
+      const id = 'mermaid-' + (mermaidSeq++);
+      // render() parses internally, so an extra parse() would just double the
+      // parsing work for every diagram (the built-in pays that cost).
+      tasks.push(mermaid.render(id, source).then((result) => {
+        container.innerHTML = result.svg;
+        // Bind click/tooltip handlers like the built-in renderer does.
+        if (typeof result.bindFunctions === 'function') {
+          result.bindFunctions(container);
+        }
       }).catch((error) => {
+        // Allow the next render message to retry this diagram.
+        container.dataset.rendered = 'false';
         const pre = document.createElement('pre');
         pre.className = 'mermaid-error';
-        pre.innerText = getMermaidErrorMessage(error);
+        const message = getMermaidErrorMessage(error);
+        pre.textContent = message.length > 2000 ? message.slice(0, 2000) + '\\n...' : message;
         container.innerHTML = '';
         container.appendChild(pre);
       }));
@@ -1026,8 +1048,9 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
     }
 
     // Fresh (unrendered) mermaid blocks emitted by the markdown-it plugin.
+    // Keep the original parallel rendering: serializing all diagrams made the
+    // first paint noticeably slower for documents with many diagrams.
     markdownBody.querySelectorAll('.mermaid:not([data-rendered="true"])').forEach((container) => {
-      container.dataset.rendered = 'true';
       renderOne(container);
     });
 
@@ -1357,7 +1380,9 @@ class CommonMarkPreviewProviderImpl implements vscode.CustomTextEditorProvider {
       el.classList.remove('mermaid-pending');
       el.classList.add('mermaid');
     });
-    mermaid.initialize({ startOnLoad: false });
+    // renderMermaid() performs the one full initialize() with the VS Code
+    // theme variables (and startOnLoad:false); a second plain initialize here
+    // would only reset the config and cost startup time.
     return renderMermaid();
   }).then(() => {
     // Diagrams are in place and the document height is final: re-apply the

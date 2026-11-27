@@ -479,6 +479,19 @@ async function main() {
     stub.__test.state.activeColorTheme = { kind: stub.ColorThemeKind.Dark };
     let h = await openPreview();
     let html = h.webview.html;
+    // The webview HTML embeds the preview runtime as an inline <script>. A
+    // syntax error there kills the whole preview (blank/black pane), and the
+    // string checks below would still pass, so parse it explicitly.
+    const inlineScripts = [...html.matchAll(/<script nonce="[^"]*">([\s\S]*?)<\/script>/g)];
+    const inlineScript = inlineScripts.length ? inlineScripts[inlineScripts.length - 1][1] : '';
+    let inlineSyntax = 'missing';
+    try {
+      new Function(inlineScript);
+      inlineSyntax = 'ok';
+    } catch (e) {
+      inlineSyntax = String(e);
+    }
+    check('P0 webview 内联脚本语法有效', inlineSyntax === 'ok', inlineSyntax);
     check('P1 auto 不写 data-preview-theme', !/<html[^>]*data-preview-theme=/.test(html), 'no forced attribute');
     check('P2 auto 首屏 body 跟随真实深色主题', html.includes("class='vscode-body vscode-dark'"), 'auto dark body');
     check('P3 预览内主题按钮存在', html.includes('id="mcp-theme-btn"'), 'theme button');

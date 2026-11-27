@@ -78,7 +78,7 @@
     {
       "name": "B1 生成 .html 文件",
       "pass": true,
-      "detail": "/tmp/mcp-export-test-ckKm9D/b-sample.html"
+      "detail": "/tmp/mcp-export-test-WKyYQR/b-sample.html"
     },
     {
       "name": "B2 HTML 默认带 styles",
@@ -88,7 +88,7 @@
     {
       "name": "B3 HTML 成功提示",
       "pass": true,
-      "detail": "已导出到 /tmp/mcp-export-test-ckKm9D/b-sample.html"
+      "detail": "已导出到 /tmp/mcp-export-test-WKyYQR/b-sample.html"
     },
     {
       "name": "C0 导出 HTML 文件已含预渲染 SVG（fenced + container 共 2 个）",
@@ -148,7 +148,7 @@
     {
       "name": "D1 生成 .pdf 文件",
       "pass": true,
-      "detail": "size=341172"
+      "detail": "size=341155"
     },
     {
       "name": "D2 PDF 含书签大纲 /Outlines（标题层级）",
@@ -183,7 +183,7 @@
     {
       "name": "D8 PDF 成功提示",
       "pass": true,
-      "detail": "已导出到 /tmp/mcp-export-test-ckKm9D/d-sample.pdf"
+      "detail": "已导出到 /tmp/mcp-export-test-WKyYQR/d-sample.pdf"
     },
     {
       "name": "E1 headingHierarchy=false 时 PDF 无 /Outlines",
@@ -248,7 +248,7 @@
     {
       "name": "L1 printToHtml 仍生成 HTML",
       "pass": true,
-      "detail": "/tmp/mcp-export-test-ckKm9D/l-sample.html"
+      "detail": "/tmp/mcp-export-test-WKyYQR/l-sample.html"
     },
     {
       "name": "L2 标题保留",
@@ -284,6 +284,11 @@
       "name": "O1 中文路径 PDF 导出成功",
       "pass": true,
       "detail": "pdf"
+    },
+    {
+      "name": "P0 webview 内联脚本语法有效",
+      "pass": true,
+      "detail": "ok"
     },
     {
       "name": "P1 auto 不写 data-preview-theme",
@@ -456,7 +461,7 @@
       "detail": "table overflow-x"
     }
   ],
-  "pass": 91,
+  "pass": 92,
   "fail": 0,
-  "work": "/tmp/mcp-export-test-ckKm9D"
+  "work": "/tmp/mcp-export-test-WKyYQR"
 }

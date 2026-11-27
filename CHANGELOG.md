@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - 修复宽表格在预览中被裁剪、无法向右滚动的问题：表格改为在自身区域内横向滚动（与 VS Code 内置预览一致），窄预览窗格下也能查看全部列；该行为仅作用于预览，HTML/PDF 导出不受影响。
+- 修复部分 Mermaid 图表在预览中无法渲染的问题：为保留段落续行缩进，CommonMark 兼容层会把行首空格替换为 NBSP（U+00A0），该处理此前也作用到了 fenced code block，导致 `pie`、`quadrantChart`、`gitGraph`、`sankey-beta`、`radar-beta`、`treemap-beta`、`packet-beta`、`architecture-beta` 等严格校验行首空白的图表报 `Lexer error` / `Parse error`。现在围栏代码块保持原始空格，并在 Mermaid 源码入口兜底把 NBSP 还原为普通空格；普通代码块也不再包含 NBSP。
+- 提升 Mermaid 渲染稳定性与性能：保持逐图并行渲染（与 VS Code 内置预览一致，多图文档首屏不退化），去掉重复的 `mermaid.parse()`（`render()` 内部已解析，每图少一次解析），仅在主题变化时重新 `initialize()`，调用 `bindFunctions` 绑定图表交互，渲染失败时重置状态以便下一次编辑自动重试，并截断过长的错误信息。
+- 修复 `architecture-beta` 分组标题使用中文时无法解析的问题；示例改用英文标题并补充 group icon（`group backend(cloud)[Backend]`）。修复后 `a.md` 中的 26 个 Mermaid 图全部可渲染。
 
 ### Notes
 
